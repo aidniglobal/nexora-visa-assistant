@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="upload-container">
+    <h2>Document Verification</h2>
+    <form action="/verify-document" method="POST" enctype="multipart/form-data">
+        <label for="file">Upload your document for verification:</label>
+        <input type="file" name="file" id="file" required>
+        <button type="submit">Verify</button>
+    </form>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+</div>
+{% endblock %}

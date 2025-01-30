@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <h2>User Agreement</h2>
+        <div class="agreement-text">
+            <p>{{ agreement_text }}</p>
+        </div>
+
+        <form method="POST">
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="accepted_terms" required>
+                    I have read and agree to the terms and conditions
+                </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Agree and Proceed</button>
+        </form>
+
+        <p>If you have any questions, feel free to <a href="mailto:{{ company_info['email'] }}">contact us</a>.</p>
+    </div>
+{% endblock %}

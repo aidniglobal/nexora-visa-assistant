@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Upload Document</h2>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash success">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{% if not current_user.is_authenticated %}
+    <p style="color: red;">You must be logged in to upload documents.</p>
+    <a href="{{ url_for('login') }}" class="button">Login here</a>
+{% else %}
+    <!-- Drag-and-Drop Upload Area -->
+    <div class="upload-container">
+        Drag and drop your file here or click to select a file.
+    </div>
+
+    <!-- Hidden form for file upload -->
+    <form method="POST" action="{{ url_for('upload_document') }}" enctype="multipart/form-data" id="uploadForm" style="display: none;">
+        <input type="file" name="file" id="fileInput" required>
+        <button type="submit">Upload</button>
+    </form>
+{% endif %}
+
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadForm = document.getElementById('uploadForm');
+
+    // Open file dialog on click
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    // Change dropzone color on drag over
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.backgroundColor = '#e2e6ea';
+    });
+
+    // Reset dropzone color on drag leave
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.backgroundColor = '#f8f9fa';
+    });
+
+    // Handle file drop
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.backgroundColor = '#f8f9fa';
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            uploadForm.submit();
+        }
+    });
+
+    // Auto-submit form when file is selected
+    fileInput.addEventListener('change', () => uploadForm.submit());
+</script>
+{% endblock %}

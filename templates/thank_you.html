@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="thank-you-message">
+        <h1>Thank You!</h1>
+        <p>Someone from our company will contact you regarding your inquiry.</p>
+        <a href="{{ url_for('index') }}">Return to Home</a>  <!-- Optionally add a link to the homepage -->
+    </div>
+{% endblock %}

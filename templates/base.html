@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.ico') }}" type="image/x-icon">
+    <title>{{ company_info.name }} - Visa Assistance</title>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>Nova Your personal visa assistant</h1>
+            <h3>By {{ company_info.name }}</h3>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('upload_document') }}">Upload Document</a></li>    
+                <li><a href="{{ url_for('verify_document_route') }}">Verify Document</a></li> 
+                <li><a href="{{ url_for('submit_application') }}">Fill Visa applicaiotn form</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-info">
+                    <ul>
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <main class="content">
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer class="footer">
+                    <div class="footer-info">
+                    <p>&copy; 2025 {{ company_info.name }}. All rights reserved. Developed by Hardik Gajjar</p>
+                </div>
+            </div>
+        </nav>       
+    </footer>    
+</body>
+</html>

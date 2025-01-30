@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Welcome to Aidni Global LLP</h1>
+<p>I am Nova, your personal virtual visa assistant.</p>
+
+<form action="{{ url_for('get_visa_info_route') }}" method="POST">
+    <label for="country">Choose a country:</label>
+    <select name="country" id="country">
+        <option value="USA">USA</option>
+        <option value="Germany">Germany</option>
+        <option value="Canada">Canada</option>
+        <option value="UK">UK</option>
+        <option value="France">France</option>
+        <option value="Spain">Spain</option>
+        <option value="Portugal">Portugal</option>
+        <option value="Poland">Poland</option>
+        <option value="Australia">Australia</option>
+        <option value="New Zealand">New Zealand</option>
+        <option value="Russia">Russia</option>
+        <option value="China">China</option>
+        <option value="Switzerland">Switzerland</option>
+        <option value="Sweden">Sweden</option>
+        <option value="Norway">Norway</option>
+        <option value="Finland">Finland</option>
+    </select>
+
+    <label for="visa_type">Choose visa type:</label>
+    <select name="visa_type" id="visa_type">
+        <option value="Visitor Visa">Visitor Visa</option>
+        <option value="Work Permit">Work Permit</option>
+        <option value="Student Visa">Student Visa</option>
+        <option value="Business Visa">Business Visa</option>
+        <option value="Permanent Residency">Permanent Residency</option>
+    </select>
+
+    <button type="submit">Send</button>
+</form>
+
+{% if documents %}
+    <h2>Required Documents for {{ visa_type }} ({{ country }}):</h2>
+    <ul>
+        <li>Documents: {{ documents["Documents"] }}</li>
+        <li>Visa Fee: {{ documents["Visa Fee"] }}</li>
+        <li>Processing Time: {{ documents["Processing Time"] }}</li>
+        <li>Embassy Locations: {{ documents["Embassy Locations"] }}</li>
+        <li>Interview Requirement: {{ documents["Interview Requirement"] }}</li>
+        <li>Notes: {{ documents["Notes"] }}</li>
+    </ul>
+    <p><strong>NOTE:</strong> Actual required documents may vary. For further details, feel free to contact us or visit the <a href="{{ url_for('submit_application') }}">Visa Form</a>.</p>
+{% endif %}
+
+<p>For further assistance, fill out the <a href="{{ url_for('submit_application') }}">form</a>. </p>
+<p>Or you can contact us at: +919825728291 or email us at phoenixairticket@gmail.com </p>
+<p>© {{ company_info.name }} | {{ company_info.headquarters }}</p>
+<p>Developed by Hardik Gajjar | All rights reserved</p>
+
+{% endblock %}

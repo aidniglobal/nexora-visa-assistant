@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container">
+    <div class="dashboard">
+      <h3>Welcome, {{ current_user.name }}!</h3>
+      <img src="{{ url_for('static', filename='profile_pics/' + (current_user.profile_picture if current_user.profile_picture else 'default.jpg')) }}" alt="Profile Picture" width="100">
+      <p>Email: {{ current_user.email }}</p>
+      <p>Phone: {{ current_user.phone or 'Not provided' }}</p>
+      <p>Address: {{ current_user.address or 'Not provided' }}</p>
+      <a href="{{ url_for('profile') }}" class="btn btn-info">Edit Profile</a>
+  </div>
+
+    <hr>
+
+    <h3>Your Documents:</h3>
+    {% if files %}
+      <ul>
+        {% for file in files %}
+          <li>{{ file.filename }} - <a href="{{ url_for('download', doc_id=file.id) }}">Download</a> | <a href="{{ url_for('delete_document', doc_id=file.id) }}">Delete</a></li>
+        {% endfor %}
+      </ul>
+      {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash success">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{% if not current_user.is_authenticated %}
+    <p style="color: red;">You must be logged in to upload documents.</p>
+    <a href="{{ url_for('login') }}" class="button">Login here</a>
+{% else %}
+    <!-- Drag-and-Drop Upload Area -->
+    <div class="upload-dropzone" id="dropzone">
+        Drag and drop your file here or click to select a file.
+    </div>
+
+    <!-- Hidden form for file upload -->
+    <form method="POST" action="{{ url_for('upload_document') }}" enctype="multipart/form-data" id="uploadForm" style="display: none;">
+        <input type="file" name="file" id="fileInput" required>
+        <button type="submit">Upload</button>
+    </form>
+{% endif %}
+
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadForm = document.getElementById('uploadForm');
+
+    // Open file dialog on click
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    // Change dropzone color on drag over
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.backgroundColor = '#e2e6ea';
+    });
+
+    // Reset dropzone color on drag leave
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.backgroundColor = '#f8f9fa';
+    });
+
+    // Handle file drop
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.backgroundColor = '#f8f9fa';
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            uploadForm.submit();
+        }
+    });
+
+    // Auto-submit form when file is selected
+    fileInput.addEventListener('change', () => uploadForm.submit());
+    </script>
+    
+    {% else %}
+      <p>No documents uploaded.</p>
+    {% endif %}
+  </div>
+{% endblock %}

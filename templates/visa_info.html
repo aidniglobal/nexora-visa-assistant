@@ -1,0 +1,14 @@
+<!-- visa_info.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Visa Information for {{ visa_info.country }} - {{ visa_info.visa_type }}</h2>
+
+<ul>
+    {% for item in visa_info.requirements %}
+    <li>{{ item }}</li>
+    {% endfor %}
+</ul>
+
+<a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+{% endblock %}
