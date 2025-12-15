@@ -285,6 +285,46 @@ gunicorn -w 4 -b 0.0.0.0:8000 run:app
 ### Using Docker
 Create `Dockerfile` and deploy to cloud platforms.
 
+## Deploy on Render (Docker)
+
+This repository includes a `Dockerfile` configured to run Nexora on Render using Docker. The image installs system dependencies needed by WeasyPrint and Tesseract — if you don't use those features you can remove those packages to slim the image.
+
+Quick local build and run:
+
+```bash
+docker build -t nexora:local .
+docker run -p 5000:5000 -e PORT=5000 nexora:local
+```
+
+To deploy on Render using the included `render.yaml`:
+
+1. Push this repository to GitHub.
+2. In the Render dashboard, connect your GitHub repo and enable Deploy from `render.yaml` or import the service.
+3. Render will build the Docker image using the repository `Dockerfile` and run the web service.
+
+Notes:
+- The `run.py` entrypoint safely loads the main `app.py` and is used by Gunicorn in the Dockerfile (`gunicorn run:app`).
+- The Dockerfile exposes a port and honors `$PORT` provided by Render. Adjust the `render.yaml` `envVars` or Render service settings as needed.
+
+## Continuous Integration (Docker image build)
+
+This repository includes a GitHub Actions workflow that builds and publishes a Docker image to GitHub Container Registry (GHCR) on push to `main`.
+
+- Workflow file: `.github/workflows/docker-build.yml`
+- The workflow builds and pushes two tags: `ghcr.io/<owner>/nexora:latest` and `ghcr.io/<owner>/nexora:<commit-sha>`.
+- By default the workflow uses `${{ secrets.GITHUB_TOKEN }}` for authentication to GHCR. You may instead provide a personal access token with `packages:write` privileges as `CR_PAT` if required.
+
+To enable the workflow:
+
+1. Ensure the repository is hosted on GitHub and Actions are enabled.
+2. Optionally create a long-lived token in `Settings → Developer settings` if you want to use a PAT.
+
+## Render deployment notes
+
+- `render.yaml` is included and references the `Dockerfile`. Edit `render.yaml` to set production `DATABASE_URL` and safe `SECRET_KEY` values (use Render's dashboard or secrets to store them securely).
+- Recommended Render env vars: `DATABASE_URL`, `SECRET_KEY`, `MAIL_USERNAME`, `MAIL_PASSWORD`.
+
+
 ## Contributing
 
 1. Create a feature branch

@@ -157,7 +157,8 @@ def inject_company_info():
         "email": "phoenixairticket@gmail.com",
         "address": "Aidni Global LLP, India"
     }
-    return dict(company_info=company_info)
+    # Expose company info and a `now()` helper to templates
+    return dict(company_info=company_info, now=lambda: datetime.utcnow())
 
 @app.route('/')
 def index():
@@ -782,6 +783,33 @@ def book_consultation():
     
     consultants_list = ResidencyConsultant.query.filter_by(verified=True).all()
     return render_template('book_consultation.html', consultants=consultants_list)
+
+@app.route('/about-app')
+def about_app():
+    """Render a copyable About text for sharing and embedding"""
+    try:
+        with open('about_app_copy.md', 'r') as f:
+            about_text = f.read()
+    except Exception:
+        about_text = "Nexora — Global Residency & Visa Platform\nVisit: http://localhost:5000"
+    return render_template('about_app_copy.html', about_text=about_text)
+
+
+@app.route('/about-us')
+def about_us():
+    """Render About Us page with copy/share functionality"""
+    try:
+        with open('about_app_copy.md', 'r') as f:
+            about_text = f.read()
+    except Exception:
+        about_text = "Nexora — Global Residency & Visa Platform\nVisit: http://localhost:5000"
+    return render_template('about_us_share.html', about_text=about_text)
+
+
+@app.route('/copyright')
+def copyright():
+    return render_template('copyright.html')
+
 
 if __name__ == '__main__':
     # Ensure the database and tables are created

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container">
+    <h1>Copyright</h1>
+    <p>&copy; {{ now().year }} {{ company_info.name }}. All rights reserved.</p>
+    <p>All content on this site, including text, images, and data, is the property of {{ company_info.name }} unless otherwise stated. Unauthorized use, reproduction, or distribution is prohibited.</p>
+    <p>If you believe any content infringes your copyright, please contact us at <a href="mailto:{{ company_info.email }}">{{ company_info.email }}</a> with details.</p>
+  </div>
+{% endblock %}

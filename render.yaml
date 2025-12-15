@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: Nexora App
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        value: "sqlite:///nexora.db" # Replace with your production DB
+      - key: SECRET_KEY
+        value: "__REPLACE_WITH_SECRET__"
+      - key: MAIL_SERVER
+        value: "smtp.gmail.com"
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        value: "__REPLACE_WITH_EMAIL__"
+      - key: MAIL_PASSWORD
+        value: "__REPLACE_WITH_PASSWORD__"
+    healthCheckPath: /

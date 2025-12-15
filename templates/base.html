@@ -14,46 +14,105 @@
         <div class="container">
             <h1>Nexora Your personal visa & residency assistant</h1>
             <h3>By {{ company_info.name }}</h3>
-            <ul class="nav-links">
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('residencies') }}">Residencies</a></li>
-                {% if current_user.is_authenticated %}
-                    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                    <li><a href="{{ url_for('my_residency_applications') }}">My Applications</a></li>
-                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
-                {% else %}
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
-                {% endif %}
-                <li><a href="{{ url_for('residency_eligibility') }}">Eligibility</a></li>
-                <li><a href="{{ url_for('residency_calculator') }}">Calculator</a></li>
-                <li><a href="{{ url_for('consultants') }}">Consultants</a></li>
-            </ul>
-        </div>
-    </nav>
-    <div class="container">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="alert alert-info">
-                    <ul>
-                        {% for message in messages %}
-                            <li>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        {% endwith %}
-    </div>
-    
-    <main class="content">
-        {% block content %}
-        {% endblock %}
-    </main>
-    <footer class="footer">
-                    <div class="footer-info">
-                    <p>&copy; 2025 {{ company_info.name }}. All rights reserved. Developed by Hardik Gajjar</p>
-                </div>
-            </div>
-        </nav>       
-    </footer>    
-</body>
-</html>
+            <!doctype html>
+            <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>{% block title %}{{ company_info.name }} - Residency & Visa Services{% endblock %}</title>
+                <meta name="description" content="{{ company_info.name }} - Global residency and visa assistance">
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+                <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+                <link rel="icon" href="{{ url_for('static', filename='images/logo.ico') }}" type="image/x-icon">
+            </head>
+            <body>
+                <header class="py-3 bg-primary text-white">
+                    <div class="container d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" style="width:40px;height:40px;margin-right:10px;">
+                            <div>
+                                <h4 class="mb-0">{{ company_info.name }}</h4>
+                                <small>Nexora — Residency & Visa Assistant</small>
+                            </div>
+                        </div>
+                        <div>
+                            {% if current_user.is_authenticated %}
+                                <small>Signed in as <strong>{{ current_user.name or current_user.email }}</strong></small>
+                            {% else %}
+                                <a class="text-white" href="{{ url_for('login') }}">Login</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </header>
+
+                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                    <div class="container">
+                        <a class="navbar-brand" href="{{ url_for('index') }}">Nexora</a>
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarNav">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('residencies') }}">Residencies</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('residency_eligibility') }}">Eligibility</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('residency_calculator') }}">Calculator</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('consultants') }}">Consultants</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('about_app') }}">Share</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+
+                <main class="py-4">
+                    <div class="container">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        {% block content %}{% endblock %}
+                    </div>
+                </main>
+
+                <footer class="bg-dark text-white pt-4">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-4 footer-section">
+                                <h6>About Nexora</h6>
+                                <p>Global residency and visa assistance platform — expert guides, program comparisons, and trusted consultants.</p>
+                            </div>
+                            <div class="col-md-4 footer-section">
+                                <h6>Company</h6>
+                                <p><strong>{{ company_info.name }}</strong><br>{{ company_info.address }}</p>
+                                <p><a class="text-white" href="mailto:{{ company_info.email }}">{{ company_info.email }}</a></p>
+                            </div>
+                            <div class="col-md-4 footer-section">
+                                <h6>Help & Policies</h6>
+                                <p>
+                                    <a class="text-white" href="{{ url_for('terms') }}">Terms</a> ·
+                                    <a class="text-white" href="{{ url_for('privacy') }}">Privacy</a> ·
+                                    <a class="text-white" href="{{ url_for('user_agreement') }}">User Agreement</a> ·
+                                    <a class="text-white" href="{{ url_for('copyright') }}">Copyright</a>
+                                </p>
+                            </div>
+                        </div>
+                        <hr class="bg-secondary">
+                        <div class="d-flex justify-content-between small">
+                            <div>&copy; {{ now().year }} {{ company_info.name }}. All rights reserved.</div>
+                            <div>Nexora — Updated weekly</div>
+                        </div>
+                    </div>
+                </footer>
+
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+                {% block scripts %}{% endblock %}
+            </body>
+            </html>
