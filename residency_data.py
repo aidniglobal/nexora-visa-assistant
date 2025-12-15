@@ -1,3 +1,9 @@
+"""
+Nexora Global Residency Programs Database
+Comprehensive worldwide residency and visa programs database
+Updated to match residencies.io and passports.io coverage
+"""
+
 residency_programs = {
     "Portugal": {
         "Golden Visa (Investment)": {

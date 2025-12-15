@@ -721,29 +721,6 @@ def my_residency_applications():
     return render_template('my_residency_applications.html', applications=applications)
 
 
-@app.route('/residency-blog')
-def residency_blog():
-    """View residency blog posts"""
-    from models import ResidencyBlogPost
-    
-    page = request.args.get('page', 1, type=int)
-    posts = ResidencyBlogPost.query.filter_by(published=True).order_by(ResidencyBlogPost.created_at.desc()).paginate(page=page, per_page=10)
-    
-    return render_template('residency_blog.html', posts=posts)
-
-
-@app.route('/residency-blog/<slug>')
-def residency_blog_post(slug):
-    """View a specific blog post"""
-    from models import ResidencyBlogPost
-    
-    post = ResidencyBlogPost.query.filter_by(slug=slug).first_or_404()
-    post.views += 1
-    db.session.commit()
-    
-    return render_template('residency_blog_post.html', post=post)
-
-
 @app.route('/consultants')
 def consultants():
     """View available consultants"""
