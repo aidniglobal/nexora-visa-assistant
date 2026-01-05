@@ -1,0 +1,10 @@
+Hi {{ inquiry.name }},
+
+Thank you for your inquiry. Below is our response:
+
+{{ response }}
+
+If you need further assistance, please reply to this message.
+
+Best regards,
+{{ company_info.name }}

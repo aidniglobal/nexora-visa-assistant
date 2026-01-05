@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timezone
 from flask_wtf import FlaskForm
 from wtforms import StringField, EmailField, SelectField, SubmitField, DateField, FileField
 from wtforms.validators import DataRequired, Email
@@ -44,7 +44,7 @@ class UserAgreement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     agreement_text = db.Column(db.Text, nullable=False)
-    agreed_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
+    agreed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=True)
     accepted = db.Column(db.Boolean, default=False)
 
     user = db.relationship('User', backref=db.backref('agreement', uselist=False))
@@ -58,13 +58,32 @@ class VerifiedDocument(db.Model):
     filename = db.Column(db.String(120), nullable=False)
     filepath = db.Column(db.String(200), nullable=False)
     status = db.Column(db.String(50), nullable=False, default="Pending")
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship('User', backref=db.backref('verified_documents', lazy=True))
 
     def __repr__(self):
         return f'<VerifiedDocument {self.filename} - Status: {self.status}>'
 
+
+class Inquiry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    response = db.Column(db.Text, nullable=True)
+    responded_at = db.Column(db.DateTime, nullable=True)
+    responded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    status = db.Column(db.String(20), default='open')  # open, responded, closed
+    closed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref=db.backref('inquiries', lazy=True), foreign_keys=[user_id])
+    responder = db.relationship('User', backref=db.backref('responded_inquiries', lazy=True), foreign_keys=[responded_by])
+
+    def __repr__(self):
+        return f'<Inquiry {self.name} - {self.email} - {self.status}>'
 # New Model for Visa Application Form
 class VisaApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -90,7 +109,7 @@ class VisaApplication(db.Model):
     # Agreement
     terms_accepted = db.Column(db.Boolean, default=False)
 
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    submitted_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship('User', backref=db.backref('visa_applications', lazy=True))
 
@@ -112,8 +131,8 @@ class ResidencyProgram(db.Model):
     minimum_investment = db.Column(db.String(100), nullable=True)
     minimum_income = db.Column(db.String(100), nullable=True)
     popular = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     applications = db.relationship('ResidencyApplication', backref='program', lazy=True, cascade='all, delete-orphan')
     saved_by = db.relationship('UserSavedProgram', backref='program', lazy=True, cascade='all, delete-orphan')
@@ -129,8 +148,8 @@ class ResidencyApplication(db.Model):
     status = db.Column(db.String(50), default='Draft')  # Draft, Submitted, Under Review, Approved, Rejected
     progress = db.Column(db.Integer, default=0)  # Percentage progress
     notes = db.Column(db.Text, nullable=True)
-    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    applied_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     user = db.relationship('User', backref=db.backref('residency_applications', lazy=True))
     steps = db.relationship('ApplicationStep', backref='application', lazy=True, cascade='all, delete-orphan')
@@ -160,7 +179,7 @@ class ResidencyApplicationDocument(db.Model):
     document_type = db.Column(db.String(100), nullable=False)  # Passport, Bank Statement, etc.
     filename = db.Column(db.String(255), nullable=False)
     filepath = db.Column(db.String(500), nullable=False)
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     verified = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
@@ -172,7 +191,7 @@ class UserSavedProgram(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     program_id = db.Column(db.Integer, db.ForeignKey('residency_program.id'), nullable=False)
     notes = db.Column(db.Text, nullable=True)
-    saved_at = db.Column(db.DateTime, default=datetime.utcnow)
+    saved_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship('User', backref=db.backref('saved_programs', lazy=True, cascade='all, delete-orphan'))
 
@@ -193,7 +212,7 @@ class ResidencyConsultant(db.Model):
     rating = db.Column(db.Float, default=0.0)
     total_reviews = db.Column(db.Integer, default=0)
     profile_picture = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     appointments = db.relationship('ConsultantAppointment', backref='consultant', lazy=True, cascade='all, delete-orphan')
 
@@ -209,7 +228,7 @@ class ConsultantAppointment(db.Model):
     duration_minutes = db.Column(db.Integer, default=30)
     status = db.Column(db.String(50), default='Scheduled')  # Scheduled, Completed, Cancelled
     notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship('User', backref=db.backref('appointments', lazy=True))
 
@@ -228,8 +247,8 @@ class ResidencyBlogPost(db.Model):
     author = db.Column(db.String(150), nullable=False)
     featured_image = db.Column(db.String(255), nullable=True)
     published = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     views = db.Column(db.Integer, default=0)
 
     def __repr__(self):

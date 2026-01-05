@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Respond to Inquiry</h2>
+
+<p><strong>From:</strong> {{ inquiry.name }} &lt;{{ inquiry.email }}&gt;</p>
+<p><strong>Message:</strong></p>
+<blockquote>{{ inquiry.message }}</blockquote>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="response" class="form-label">Response</label>
+        <textarea class="form-control" name="response" id="response" rows="6" required>{{ inquiry.response|default('') }}</textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">Send Response</button>
+    <a class="btn btn-secondary" href="{{ url_for('admin_inquiries') }}">Back</a>
+</form>
+{% endblock %}

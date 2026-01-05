@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Inquiry</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST" id="inquiryForm" novalidate>
+    <div class="mb-3">
+        <label for="name" class="form-label">Name</label>
+        <input type="text" class="form-control" id="name" name="name" value="{{ name|default('') }}" required maxlength="120">
+        <div class="invalid-feedback">Please enter your name.</div>
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" value="{{ email|default('') }}" required maxlength="120">
+        <div class="invalid-feedback">Please enter a valid email.</div>
+    </div>
+    <div class="mb-3">
+        <label for="message" class="form-label">Message</label>
+        <textarea class="form-control" id="message" name="message" rows="5" required maxlength="2000"></textarea>
+        <div class="invalid-feedback">Please enter your message (max 2000 chars).</div>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit Inquiry</button>
+</form>
+
+<script>
+// Simple client-side validation using Bootstrap validation styles
+(function() {
+  'use strict'
+  const form = document.getElementById('inquiryForm')
+  form.addEventListener('submit', function(event) {
+    if (!form.checkValidity()) {
+      event.preventDefault()
+      event.stopPropagation()
+      form.classList.add('was-validated')
+      return
+    }
+    // otherwise allow submission
+  }, false)
+})()
+
+// AJAX submit to show modal instead of redirect
+(function(){
+  const form = document.getElementById('inquiryForm')
+  form.addEventListener('submit', async function(e){
+    if (!form.checkValidity()) return
+    e.preventDefault()
+    const data = new FormData(form)
+    try{
+      const resp = await fetch(form.action || window.location.pathname, {method:'POST', body: data, headers:{'X-Requested-With':'XMLHttpRequest'}})
+      if (resp.ok) {
+        // show a simple modal
+        const modal = document.createElement('div')
+        modal.className = 'modal fade show'
+        modal.style.display = 'block'
+        modal.innerHTML = `
+          <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Thank you</h5></div><div class="modal-body">Your inquiry has been received; our team will contact you shortly.</div><div class="modal-footer"><a href="/" class="btn btn-primary">Home</a><button class="btn btn-secondary" id="closeModal">Close</button></div></div></div>`
+        document.body.appendChild(modal)
+        document.getElementById('closeModal').addEventListener('click', ()=> modal.remove())
+      } else {
+        window.location = (await resp.text()) || '/' 
+      }
+    } catch(err){
+      console.error('Inquiry submit failed', err)
+      form.submit() // fallback
+    }
+  })
+})()

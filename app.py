@@ -6,9 +6,9 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 import os
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from models import db, User, Document, UserAgreement, VerifiedDocument, ResidencyApplication, ResidencyProgram
+from models import db, User, Document, UserAgreement, VerifiedDocument, ResidencyApplication, ResidencyProgram, Inquiry
 from visa_data import get_visa_info, company_info
-from datetime import datetime
+from datetime import datetime, timezone
 from weasyprint import HTML
 from io import BytesIO
 import io
@@ -327,7 +327,7 @@ def inject_company_info():
         "address": "Aidni Global LLP, India"
     }
     # Expose company info and a `now()` helper to templates
-    return dict(company_info=company_info, now=lambda: datetime.utcnow())
+    return dict(company_info=company_info, now=lambda: datetime.now(timezone.utc))
 
 @app.route('/')
 def index():
@@ -531,6 +531,101 @@ def admin_visa_manage():
     return render_template('admin_visa_manage.html', countries=countries)
 
 
+# ---------------- Admin: inquiries ----------------
+@app.route('/admin/inquiries')
+@login_required
+def admin_inquiries():
+    if not getattr(current_user, 'is_admin', False):
+        flash('Unauthorized', 'danger')
+        return redirect(url_for('index'))
+    status = request.args.get('status')  # optional filter
+    page = int(request.args.get('page', 1))
+    per_page = 5
+    query = Inquiry.query
+    if status == 'unresponded':
+        query = query.filter(Inquiry.response == None, Inquiry.status == 'open')
+    elif status == 'closed':
+        query = query.filter(Inquiry.status == 'closed')
+    pagination = query.order_by(Inquiry.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    inquiries = pagination.items
+    return render_template('admin_inquiries.html', inquiries=inquiries, filter_status=status, pagination=pagination)
+
+
+@app.route('/admin/inquiries/respond/<int:inq_id>', methods=['GET','POST'])
+@login_required
+def admin_respond_inquiry(inq_id):
+    if not getattr(current_user, 'is_admin', False):
+        flash('Unauthorized', 'danger')
+        return redirect(url_for('index'))
+    from flask import abort
+    inq = db.session.get(Inquiry, inq_id)
+    if not inq:
+        abort(404)
+    if request.method == 'POST':
+        response = request.form.get('response','').strip()
+        if not response:
+            flash('Response cannot be empty', 'danger')
+            return redirect(request.url)
+        inq.response = response
+        inq.responded_at = datetime.now(timezone.utc)
+        inq.responded_by = current_user.id
+        inq.status = 'responded'
+        db.session.commit()
+        # Email using template
+        try:
+            if not app.config.get('TESTING', False):
+                # render email body from templates
+                body = render_template('emails/inquiry_response.txt', inquiry=inq, response=response)
+                html = render_template('emails/inquiry_response.html', inquiry=inq, response=response)
+                send_email(inq.email, f'Response to your inquiry', body=body, html_content=html)
+        except Exception as e:
+            print('Could not send response email:', e)
+        flash('Response saved and sent', 'success')
+        return redirect(url_for('admin_inquiries'))
+    return render_template('admin_respond.html', inquiry=inq)
+
+
+@app.route('/admin/inquiries/quick_reply/<int:inq_id>', methods=['POST'])
+@login_required
+def admin_quick_reply(inq_id):
+    if not getattr(current_user, 'is_admin', False):
+        return ('Unauthorized', 403)
+    from flask import abort
+    inq = db.session.get(Inquiry, inq_id)
+    if not inq:
+        abort(404)
+    # Create a quick templated response
+    response = render_template('emails/inquiry_response.txt', inquiry=inq, response='')
+    inq.response = response
+    inq.responded_at = datetime.now(timezone.utc)
+    inq.responded_by = current_user.id
+    inq.status = 'responded'
+    db.session.commit()
+    # Send email
+    try:
+        if not app.config.get('TESTING', False):
+            body = response
+            html = render_template('emails/inquiry_response.html', inquiry=inq, response=response)
+            send_email(inq.email, f'Response to your inquiry', body=body, html_content=html)
+    except Exception as e:
+        print('Could not send quick reply email:', e)
+    return ('OK', 200)
+
+
+@app.route('/admin/inquiries/close/<int:inq_id>', methods=['POST'])
+@login_required
+def admin_close_inquiry(inq_id):
+    if not getattr(current_user, 'is_admin', False):
+        return ('Unauthorized', 403)
+    from flask import abort
+    inq = db.session.get(Inquiry, inq_id)
+    if not inq:
+        abort(404)
+    inq.status = 'closed'
+    inq.closed_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return ('OK', 200)
+
 def user_agreement():
     agreement_text = """
     By uploading your documents, you agree to allow Aidni Global LLP to use your documents
@@ -545,12 +640,12 @@ def user_agreement():
             new_agreement = UserAgreement(
                 user_id=current_user.id,
                 agreement_text=agreement_text,
-                agreed_at=datetime.utcnow(),
+                agreed_at=datetime.now(timezone.utc),
                 status=True
             )
             db.session.add(new_agreement)
         else:
-            existing_agreement.agreed_at = datetime.utcnow()
+            existing_agreement.agreed_at = datetime.now(timezone.utc)
             existing_agreement.status = True
 
         db.session.commit()
@@ -571,6 +666,35 @@ def generate_pdf(content, filename):
     pdf = html.write_pdf()
     with open(filename, 'wb') as f:
         f.write(pdf)    
+
+
+@app.route('/inquiry', methods=['GET','POST'])
+def inquiry():
+    from models import Inquiry
+    if request.method == 'POST':
+        name = request.form.get('name','').strip()
+        email = request.form.get('email','').strip()
+        message = request.form.get('message','').strip()
+        if not (name and email and message):
+            flash('Please provide name, email, and a message.')
+            return redirect(request.url)
+        user_id = current_user.id if getattr(current_user, 'is_authenticated', False) else None
+        inq = Inquiry(user_id=user_id, name=name, email=email, message=message)
+        db.session.add(inq)
+        db.session.commit()
+        # Try to notify via email in non-testing environments; non-fatal
+        if not app.config.get('TESTING', False):
+            try:
+                send_email(app.config.get('MAIL_DEFAULT_SENDER'), f'New inquiry from {name}', body=message)
+            except Exception as e:
+                print('Could not send inquiry notification:', e)
+        flash('Your inquiry has been received; our team will contact you shortly.', 'success')
+        return redirect(url_for('index'))
+
+    # Prefill if logged in
+    if getattr(current_user, 'is_authenticated', False):
+        return render_template('inquiry.html', name=current_user.name, email=current_user.email)
+    return render_template('inquiry.html')
 
 @app.route('/upload_document', methods=['GET', 'POST'])
 @login_required
@@ -640,7 +764,10 @@ def send_email(recipient, subject, body=None, html_content=None):
 @app.route('/download/<int:doc_id>')
 @login_required
 def download(doc_id):
-    document = Document.query.get_or_404(doc_id)
+    from flask import abort
+    document = db.session.get(Document, doc_id)
+    if not document:
+        abort(404)
     if document.user_id != current_user.id:
         flash('You are not authorized to access this file.')
         return redirect(url_for('dashboard'))
@@ -649,7 +776,11 @@ def download(doc_id):
 @app.route('/delete/<int:doc_id>')
 @login_required
 def delete_document(doc_id):
-    document = Document.query.get_or_404(doc_id)
+    from flask import abort
+    document = db.session.get(Document, doc_id)
+
+    if not document:
+        abort(404)
 
     # Check if the current user owns the document
     if document.user_id != current_user.id:
@@ -1060,8 +1191,10 @@ def consultants():
 def consultant_profile(consultant_id):
     """View consultant profile"""
     from models import ResidencyConsultant
-    
-    consultant = ResidencyConsultant.query.get_or_404(consultant_id)
+    from flask import abort
+    consultant = db.session.get(ResidencyConsultant, consultant_id)
+    if not consultant:
+        abort(404)
     return render_template('consultant_profile.html', consultant=consultant)
 
 
@@ -1077,8 +1210,10 @@ def book_consultation():
         duration = request.form.get('duration', 30)
         notes = request.form.get('notes')
         
-        consultant = ResidencyConsultant.query.get_or_404(consultant_id)
-        
+        consultant = db.session.get(ResidencyConsultant, consultant_id)
+        from flask import abort
+        if not consultant:
+            abort(404)
         try:
             from datetime import datetime
             scheduled_datetime = datetime.fromisoformat(scheduled_at)

@@ -63,8 +63,8 @@ def create_cover_letter(applicant, recipient, company, position, opening, body, 
     pdf.ln(8)
 
     # Date
-    from datetime import datetime
-    pdf.cell(0, 6, txt=datetime.utcnow().strftime('%B %d, %Y'), ln=True)
+    from datetime import datetime, timezone
+    pdf.cell(0, 6, txt=datetime.now(timezone.utc).strftime('%B %d, %Y'), ln=True)
     pdf.ln(8)
 
     # Recipient
