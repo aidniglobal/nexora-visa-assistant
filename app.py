@@ -546,7 +546,7 @@ def admin_inquiries():
         query = query.filter(Inquiry.response == None, Inquiry.status == 'open')
     elif status == 'closed':
         query = query.filter(Inquiry.status == 'closed')
-    pagination = query.order_by(Inquiry.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    pagination = query.order_by(Inquiry.created_at.asc()).paginate(page=page, per_page=per_page, error_out=False)
     inquiries = pagination.items
     return render_template('admin_inquiries.html', inquiries=inquiries, filter_status=status, pagination=pagination)
 
