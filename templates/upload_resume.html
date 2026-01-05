@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Upload Resume</h2>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash success">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{% if not current_user.is_authenticated %}
+    <p style="color: red;">You must be logged in to upload your resume.</p>
+    <a href="{{ url_for('login') }}" class="button">Login here</a>
+{% else %}
+    <form method="POST" action="{{ url_for('upload_resume') }}" enctype="multipart/form-data" id="resumeForm">
+        <p>You can either upload a <strong>PDF</strong> resume (max 2MB) or fill in your details below if you can't upload.</p>
+
+        <label for="file">Upload PDF resume (optional):</label>
+        <input type="file" name="file" id="file" accept="application/pdf">
+
+        <hr>
+
+        <h4>Or fill details manually</h4>
+        <label for="name">Name</label>
+        <input type="text" name="name" id="name">
+
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email">
+
+        <hr>
+
+        <label for="photo">Passport-size photo (PNG/JPG, <=200KB) <strong>(required)</strong>:</label>
+        <input type="file" name="photo" id="photo" accept="image/png, image/jpeg" required>
+
+        <button type="submit">Upload / Extract</button>
+    </form>
+
+    {% if parsed %}
+        <hr>
+        <h3>Extracted information</h3>
+        <form method="POST" action="{{ url_for('generate_europass') }}" enctype="multipart/form-data">
+            <label for="name">Name</label>
+            <input type="text" name="name" id="name" value="{{ parsed.name }}" required>
+
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" value="{{ parsed.email }}" required>
+
+            <p>Preview of extracted text:</p>
+            <textarea rows="8" cols="80" readonly>{{ parsed.text }}</textarea>
+
+            <input type="hidden" name="photo_filename" value="{{ photo if photo is defined else '' }}">
+
+            <button type="submit">Generate Europass CV (requires photo)</button>
+        </form>
+    {% endif %}
+
+{% endif %}
+
+<script>
+// Simple client-side check: ensure photo is selected before submitting
+const resumeForm = document.getElementById('resumeForm');
+resumeForm.addEventListener('submit', (e) => {
+    const photo = document.getElementById('photo');
+    if (!photo || !photo.files || photo.files.length === 0) {
+        e.preventDefault();
+        alert('Passport photo is required (PNG/JPG, <=200KB).');
+    }
+});
+</script>
+
+{% endblock %}

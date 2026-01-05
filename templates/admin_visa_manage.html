@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Admin - Visa Requirements Management</h2>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash success">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{% if not current_user.is_authenticated or not current_user.is_admin %}
+    <p style="color:red;">You do not have permission to access this page.</p>
+{% else %}
+    <h4>Current countries</h4>
+    <ul>
+        {% for c in countries %}
+            <li>{{ c }}</li>
+        {% endfor %}
+    </ul>
+
+    <form method="POST" action="{{ url_for('admin_visa_manage') }}">
+        <button type="submit" name="action" value="restore">Restore default seed</button>
+        <button type="submit" name="action" value="download">Download current seed</button>
+    </form>
+{% endif %}
+
+{% endblock %}

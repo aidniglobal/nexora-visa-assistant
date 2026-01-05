@@ -18,6 +18,7 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20))  # New field for phone number
     address = db.Column(db.String(200))  # New field for address
     profile_picture = db.Column(db.String(120), default='default.jpg')  # Default profile picture
+    is_admin = db.Column(db.Boolean, default=False)  # Flag for admin users
 
     def __repr__(self):
         return f'<User {self.name}, {self.email}>'

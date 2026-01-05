@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Create Cover Letter</h2>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash success">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{% if not current_user.is_authenticated %}
+    <p style="color: red;">You must be logged in to create a cover letter.</p>
+    <a href="{{ url_for('login') }}" class="button">Login here</a>
+{% else %}
+    <form method="POST" action="{{ url_for('create_cover_letter') }}">
+        <h4>Your details</h4>
+        <label for="name">Name</label>
+        <input type="text" name="name" id="name" value="{{ current_user.name or '' }}" required>
+
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" value="{{ current_user.email or '' }}" required>
+
+        <hr>
+        <h4>Job details</h4>
+        <label for="recipient">Hiring Manager / Recipient</label>
+        <input type="text" name="recipient" id="recipient" required>
+
+        <label for="company">Company</label>
+        <input type="text" name="company" id="company" required>
+
+        <label for="position">Position</label>
+        <input type="text" name="position" id="position" required>
+
+        <label for="opening">Opening sentence (brief)</label>
+        <textarea name="opening" id="opening" rows="2"></textarea>
+
+        <label for="body">Main body (experience / qualifications)</label>
+        <textarea name="body" id="body" rows="6"></textarea>
+
+        <label for="closing">Closing paragraph</label>
+        <textarea name="closing" id="closing" rows="2"></textarea>
+
+        <button type="submit">Generate Cover Letter (PDF)</button>
+    </form>
+{% endif %}
+
+{% endblock %}

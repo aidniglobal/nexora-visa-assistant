@@ -16,6 +16,7 @@ A comprehensive web application for discovering, comparing, and applying for res
 - Save favorite programs
 - Track residency applications
 - Document management with OCR verification
+- Resume upload and Europass conversion (upload a resume file and generate a Europass-formatted CV)
 - Consultation booking system
 - Application progress tracking
 
@@ -159,6 +160,34 @@ nova/
 - `/submit_application` - Visa application form
 - `/upload_document` - Document upload
 - `/verify-document` - Document verification
+- `/upload_resume` - Upload your resume (PDF only, max 2MB) or fill details manually and upload a required passport photo
+- `/generate_europass` - Generates and downloads Europass PDF (POST). A passport photo is required to generate the CV.
+- `/create_cover_letter` - Fill a short form to create a cover letter and download it as a PDF
+- `/visa-requirements` - Browse visa document requirements by country and visa type (human-readable)
+- `/api/visa-requirements` - Programmatic access to requirements as JSON (query by `country` and optional `visa_type`)
+
+Bulk import and seed data
+
+- A richer dataset of visa requirements is included in `data/visa_requirements_seed.json`.
+- To import a different dataset, use the CLI tool:
+
+```bash
+python scripts/import_visa_requirements.py path/to/your-file.json
+```
+
+- You can also import from the UI (admin-only):
+  - Visit `/admin/import-visa-requirements` (must be an admin user)
+  - Upload a JSON file matching the schema below
+
+- The expected JSON schema is a top-level object keyed by country, each mapping to an object keyed by visa type, which maps to an array of document requirement strings. Example:
+
+```json
+{
+  "Portugal": {
+    "work_visa": ["Passport", "Signed contract", "Proof of funds"]
+  }
+}
+```
 
 ### User Routes
 - `/register` - User registration

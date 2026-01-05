@@ -16,11 +16,24 @@ from openpyxl import Workbook  # Importing the openpyxl library to create Excel 
 from flask_mail import Mail, Message
 import pytesseract
 from PIL import Image
+from app.europass import create_europass_cv
 from flask_wtf import FlaskForm
 from wtforms import StringField, EmailField, FileField, SubmitField
 from wtforms.validators import DataRequired, Email
 from flask_wtf.file import FileAllowed
 import time
+import re
+
+# Optional libraries for parsing documents
+try:
+    import fitz  # PyMuPDF for PDFs
+except Exception:
+    fitz = None
+
+try:
+    import docx  # python-docx for .docx files
+except Exception:
+    docx = None
 
 app = Flask(__name__, template_folder="templates")
 
@@ -29,9 +42,9 @@ migrate = Migrate(app, db)
 
 # Configure app settings
 app.config['UPLOAD_FOLDER'] = 'uploads/'
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'pdf'}
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'pdf', 'docx'}
 app.secret_key = 'eafcf00803afe5300d29b09f92de1545'
-app.config['UPLOAD_EXTENSIONS'] = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+app.config['UPLOAD_EXTENSIONS'] = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx'])
 app.config['UPLOAD_PATH'] = 'uploads'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///nexora.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -93,6 +106,162 @@ def verify_document(file_path):
 
 VERIFIED_UPLOAD_FOLDER = 'uploads/verified_documents'
 os.makedirs(VERIFIED_UPLOAD_FOLDER, exist_ok=True)
+
+# Ensure upload folder exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+PHOTOS_FOLDER = os.path.join(app.config['UPLOAD_FOLDER'], 'photos')
+os.makedirs(PHOTOS_FOLDER, exist_ok=True)
+
+# Specific allowed types for resumes and photos
+RESUME_ALLOWED = {'pdf'}
+PHOTO_ALLOWED = {'png', 'jpg', 'jpeg'}
+
+
+def parse_resume(file_path):
+    """Parse text from PDF resumes. Only PDFs are supported for resume uploads."""
+    text = ""
+    ext = os.path.splitext(file_path)[1].lower()
+    try:
+        if ext == '.pdf' and fitz:
+            doc = fitz.open(file_path)
+            for page in doc:
+                text += page.get_text()
+        else:
+            # No parser available for non-PDFs in this flow
+            text = ''
+    except Exception as e:
+        print('parse_resume error:', e)
+        text = ''
+
+    email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
+    email = email_match.group(0) if email_match else ''
+    name = ''
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    for line in lines[:10]:
+        if line.lower().startswith('name'):
+            name = line.split(':',1)[1].strip() if ':' in line else ''
+            break
+    if not name:
+        for line in lines[:10]:
+            if '@' not in line and 'resume' not in line.lower() and len(line.split())<=6:
+                name = line
+                break
+    return {'text': text, 'name': name, 'email': email}
+
+
+def validate_photo(photo_file):
+    """Validate passport photo: extension, size (<=200KB), and approximate portrait aspect ratio."""
+    if not photo_file or photo_file.filename == '':
+        return False, 'No photo uploaded.'
+    filename = secure_filename(photo_file.filename)
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    if ext not in PHOTO_ALLOWED:
+        return False, 'Photo must be a PNG or JPG image.'
+
+    # Check size
+    photo_file.stream.seek(0, 2)
+    size = photo_file.stream.tell()
+    photo_file.stream.seek(0)
+    if size > 200 * 1024:
+        return False, 'Photo must be <= 200KB.'
+
+    # Validate aspect ratio
+    try:
+        img = Image.open(photo_file.stream)
+        w, h = img.size
+        ratio = w / h
+        if not (0.6 <= ratio <= 0.9):
+            return False, 'Photo should be portrait (approximate passport dimensions).'
+        photo_file.stream.seek(0)
+    except Exception as e:
+        print('Photo validation error:', e)
+        return False, 'Invalid image file.'
+
+    return True, None
+
+
+@app.route('/upload_resume', methods=['GET','POST'])
+@login_required
+def upload_resume():
+    if request.method == 'POST':
+        # Photo is required for both manual entry and file uploads
+        photo = request.files.get('photo')
+        valid_photo, photo_err = validate_photo(photo)
+        if not valid_photo:
+            flash(photo_err)
+            return redirect(request.url)
+
+        # Save photo
+        photo_filename = secure_filename(photo.filename)
+        photo_save_path = os.path.join(PHOTOS_FOLDER, photo_filename)
+        photo.save(photo_save_path)
+
+        file = request.files.get('file')
+        if file and file.filename != '':
+            # Resume upload path (PDF only)
+            filename = secure_filename(file.filename)
+            ext = filename.rsplit('.',1)[1].lower() if '.' in filename else ''
+            if ext not in RESUME_ALLOWED or file.mimetype != 'application/pdf':
+                flash('Resume must be a PDF file (<=2MB).')
+                return redirect(request.url)
+
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(save_path)
+            parsed = parse_resume(save_path)
+            # Pre-fill name/email if parsed, otherwise empty
+            return render_template('upload_resume.html', parsed=parsed, filename=filename, photo=photo_filename)
+        else:
+            # Manual entry path: accept name/email from form
+            name = request.form.get('name','').strip()
+            email = request.form.get('email','').strip()
+            if not name or not email:
+                flash('If you did not upload a resume, provide Name and Email in the form.')
+                return redirect(request.url)
+            parsed = {'text': '', 'name': name, 'email': email}
+            return render_template('upload_resume.html', parsed=parsed, filename=None, photo=photo_filename)
+
+    return render_template('upload_resume.html', parsed=None)
+
+
+@app.route('/generate_europass', methods=['POST'])
+@login_required
+def generate_europass():
+    name = request.form.get('name','').strip()
+    email = request.form.get('email','').strip()
+    photo_filename = request.form.get('photo_filename') or request.files.get('photo_filename')
+
+    if not name or not email:
+        flash('Name and email are required to generate Europass CV.')
+        return redirect(url_for('upload_resume'))
+
+    # If photo_filename isn't provided as text, try to get from form file
+    photo_path = None
+    photo_file = request.files.get('photo')
+    if photo_file and photo_file.filename:
+        ok, err = validate_photo(photo_file)
+        if not ok:
+            flash(err)
+            return redirect(url_for('upload_resume'))
+        photo_filename = secure_filename(photo_file.filename)
+        photo_path = os.path.join(PHOTOS_FOLDER, photo_filename)
+        photo_file.save(photo_path)
+    elif photo_filename:
+        photo_path = os.path.join(PHOTOS_FOLDER, secure_filename(photo_filename))
+        if not os.path.exists(photo_path):
+            photo_path = None
+
+    if not photo_path:
+        flash('Passport photo is required to generate the Europass CV.')
+        return redirect(url_for('upload_resume'))
+
+    user_data = {'name': name, 'email': email}
+    try:
+        output_path = create_europass_cv(user_data, photo_path=photo_path)
+        return send_file(output_path, as_attachment=True)
+    except Exception as e:
+        print('Error generating Europass:', e)
+        flash('Error generating Europass CV.')
+        return redirect(url_for('upload_resume'))
 
 
 def allowed_file(filename):
@@ -212,8 +381,156 @@ def dashboard():
         return redirect(url_for('login'))
     
 
-@app.route('/user_agreement', methods=['GET', 'POST'])
+@app.route('/create_cover_letter', methods=['GET','POST'])
 @login_required
+def create_cover_letter():
+    if request.method == 'POST':
+        name = request.form.get('name','').strip()
+        email = request.form.get('email','').strip()
+        recipient = request.form.get('recipient','').strip()
+        company = request.form.get('company','').strip()
+        position = request.form.get('position','').strip()
+        opening = request.form.get('opening','').strip()
+        body = request.form.get('body','').strip()
+        closing = request.form.get('closing','').strip()
+
+        if not all([name, email, recipient, company, position]):
+            flash('Please fill in required fields: Name, Email, Recipient, Company, Position')
+            return redirect(request.url)
+
+        applicant = {'name': name, 'email': email}
+        try:
+            from app.europass import create_cover_letter as _create_cover
+            output_path = _create_cover(applicant, recipient, company, position, opening, body, closing)
+            return send_file(output_path, as_attachment=True)
+        except Exception as e:
+            print('Error generating cover letter:', e)
+            flash('Error generating cover letter.')
+            return redirect(request.url)
+
+    return render_template('create_cover_letter.html')
+
+
+# Visa requirements pages
+from app.visa_requirements import list_countries, list_visa_types, get_requirements, reload_seed
+
+
+@app.route('/visa-requirements')
+def visa_requirements():
+    country = request.args.get('country')
+    visa_type = request.args.get('visa_type')
+
+    countries = list_countries()
+
+    data = get_requirements(country=country, visa_type=visa_type) if (country or visa_type) else get_requirements()
+
+    # We'll pass countries list, selected country, selected visa type and requirements data
+    return render_template('visa_requirements.html', countries=countries, selected_country=country, selected_visa_type=visa_type, data=data)
+
+
+@app.route('/api/visa-requirements')
+def api_visa_requirements():
+    country = request.args.get('country')
+    visa_type = request.args.get('visa_type')
+    data = get_requirements(country=country, visa_type=visa_type)
+    return jsonify(data)
+
+
+@app.route('/admin/import-visa-requirements', methods=['GET','POST'])
+@login_required
+def admin_import_visa():
+    # Simple admin check
+    if not getattr(current_user, 'is_admin', False):
+        return render_template('admin_import_visa.html', countries=[])
+
+    # show countries list on GET
+    countries = list_countries()
+
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file selected')
+            return redirect(request.url)
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        # Validate JSON structure
+        try:
+            import json
+            data = json.load(file)
+        except Exception as e:
+            flash('Invalid JSON file')
+            return redirect(request.url)
+
+        # Validate structure using script helper
+        try:
+            from scripts.import_visa_requirements import validate_structure
+            ok, err = validate_structure(data)
+            if not ok:
+                flash(f'Invalid schema: {err}')
+                return redirect(request.url)
+        except Exception as e:
+            flash('Validation routine not available')
+            return redirect(request.url)
+
+        # Write to seed and reload
+        try:
+            # Write to the canonical seed path used by app.visa_requirements
+            try:
+                from app.visa_requirements import SEED_PATH as seed_path
+            except Exception:
+                seed_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'visa_requirements_seed.json'))
+            os.makedirs(os.path.dirname(seed_path), exist_ok=True)
+            with open(seed_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            # Reload in-memory representation
+            try:
+                reload_seed()
+            except Exception:
+                pass
+            flash('Visa requirements imported successfully')
+            return redirect(url_for('visa_requirements'))
+        except Exception as e:
+            print('Import error:', e)
+            flash('Error writing seed file')
+            return redirect(request.url)
+
+    return render_template('admin_import_visa.html', countries=countries)
+
+
+@app.route('/admin/visa-management', methods=['GET','POST'])
+@login_required
+def admin_visa_manage():
+    # admin UI to view countries and restore defaults
+    if not getattr(current_user, 'is_admin', False):
+        return render_template('admin_visa_manage.html', countries=[])
+
+    from app.visa_requirements import list_countries, restore_default_seed
+    countries = list_countries()
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'restore':
+            restored = restore_default_seed()
+            if restored is None:
+                flash('Failed to restore default seed')
+            else:
+                flash('Default seed restored successfully')
+            return redirect(url_for('admin_visa_manage'))
+        elif action == 'download':
+            try:
+                from app.visa_requirements import SEED_PATH as seed_path
+            except Exception:
+                seed_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'visa_requirements_seed.json'))
+            if os.path.exists(seed_path):
+                return send_file(seed_path, as_attachment=True)
+            else:
+                flash('Seed file not found')
+                return redirect(url_for('admin_visa_manage'))
+
+    return render_template('admin_visa_manage.html', countries=countries)
+
+
 def user_agreement():
     agreement_text = """
     By uploading your documents, you agree to allow Aidni Global LLP to use your documents
