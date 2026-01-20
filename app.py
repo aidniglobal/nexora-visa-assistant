@@ -635,6 +635,7 @@ def admin_close_inquiry(inq_id):
     db.session.commit()
     return ('OK', 200)
 
+@app.route('/user_agreement', methods=['GET', 'POST'])
 def user_agreement():
     agreement_text = """
     By uploading your documents, you agree to allow Aidni Global LLP to use your documents
