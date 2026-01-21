@@ -1,4 +1,4 @@
-# Nexora - Global Residency & Visa Platform
+# Nexora Investments
 
 A comprehensive web application for discovering, comparing, and applying for residency programs and visas worldwide.
 

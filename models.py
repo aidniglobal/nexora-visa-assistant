@@ -121,140 +121,44 @@ class VisaApplication(db.Model):
     def __repr__(self):
         return f'<VisaApplication {self.visa_type} - {self.country} - {self.user_id}>'
 
-# Residency Program Models
-class ResidencyProgram(db.Model):
+# Residency Program Models - Moved to investment context
+# Keeping minimal model structure for investment applications
+
+class InvestmentApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    country = db.Column(db.String(100), nullable=False, index=True)
-    program_name = db.Column(db.String(150), nullable=False)
-    residency_type = db.Column(db.String(50), nullable=False)  # Investment, Employment, Skilled Migration, etc.
-    description = db.Column(db.Text, nullable=False)
-    processing_time = db.Column(db.String(100), nullable=False)
-    initial_permit_duration = db.Column(db.String(100), nullable=False)
-    path_to_citizenship = db.Column(db.String(100), nullable=False)
-    visa_free_countries = db.Column(db.Integer, default=0)
-    family_eligible = db.Column(db.Boolean, default=False)
-    minimum_investment = db.Column(db.String(100), nullable=True)
-    minimum_income = db.Column(db.String(100), nullable=True)
-    popular = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
-    applications = db.relationship('ResidencyApplication', backref='program', lazy=True, cascade='all, delete-orphan')
-    saved_by = db.relationship('UserSavedProgram', backref='program', lazy=True, cascade='all, delete-orphan')
-
-    def __repr__(self):
-        return f'<ResidencyProgram {self.country} - {self.program_name}>'
-
-
-class ResidencyApplication(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    program_id = db.Column(db.Integer, db.ForeignKey('residency_program.id'), nullable=False)
-    status = db.Column(db.String(50), default='Draft')  # Draft, Submitted, Under Review, Approved, Rejected
-    progress = db.Column(db.Integer, default=0)  # Percentage progress
-    notes = db.Column(db.Text, nullable=True)
-    applied_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
-    user = db.relationship('User', backref=db.backref('residency_applications', lazy=True))
-    steps = db.relationship('ApplicationStep', backref='application', lazy=True, cascade='all, delete-orphan')
-    documents = db.relationship('ResidencyApplicationDocument', backref='application', lazy=True, cascade='all, delete-orphan')
-
-    def __repr__(self):
-        return f'<ResidencyApplication {self.user_id} - {self.program_id}>'
-
-
-class ApplicationStep(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    application_id = db.Column(db.Integer, db.ForeignKey('residency_application.id'), nullable=False)
-    step_number = db.Column(db.Integer, nullable=False)
-    step_name = db.Column(db.String(150), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    completed = db.Column(db.Boolean, default=False)
-    completed_at = db.Column(db.DateTime, nullable=True)
-    estimated_duration = db.Column(db.String(50), nullable=True)
-
-    def __repr__(self):
-        return f'<ApplicationStep {self.step_name}>'
-
-
-class ResidencyApplicationDocument(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    application_id = db.Column(db.Integer, db.ForeignKey('residency_application.id'), nullable=False)
-    document_type = db.Column(db.String(100), nullable=False)  # Passport, Bank Statement, etc.
-    filename = db.Column(db.String(255), nullable=False)
-    filepath = db.Column(db.String(500), nullable=False)
-    uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    verified = db.Column(db.Boolean, default=False)
-
-    def __repr__(self):
-        return f'<ResidencyApplicationDocument {self.document_type}>'
-
-
-class UserSavedProgram(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    program_id = db.Column(db.Integer, db.ForeignKey('residency_program.id'), nullable=False)
-    notes = db.Column(db.Text, nullable=True)
-    saved_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-    user = db.relationship('User', backref=db.backref('saved_programs', lazy=True, cascade='all, delete-orphan'))
-
-    def __repr__(self):
-        return f'<UserSavedProgram {self.user_id} - {self.program_id}>'
-
-
-class ResidencyConsultant(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    full_name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
-    specializations = db.Column(db.String(500), nullable=False)  # Comma-separated countries/programs
-    experience_years = db.Column(db.Integer, nullable=False)
-    bio = db.Column(db.Text, nullable=True)
-    hourly_rate = db.Column(db.Float, nullable=True)
-    verified = db.Column(db.Boolean, default=False)
-    rating = db.Column(db.Float, default=0.0)
-    total_reviews = db.Column(db.Integer, default=0)
-    profile_picture = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-    appointments = db.relationship('ConsultantAppointment', backref='consultant', lazy=True, cascade='all, delete-orphan')
-
-    def __repr__(self):
-        return f'<ResidencyConsultant {self.name}>'
-
-
-class ConsultantAppointment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    consultant_id = db.Column(db.Integer, db.ForeignKey('residency_consultant.id'), nullable=False)
-    scheduled_at = db.Column(db.DateTime, nullable=False)
-    duration_minutes = db.Column(db.Integer, default=30)
-    status = db.Column(db.String(50), default='Scheduled')  # Scheduled, Completed, Cancelled
-    notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-    user = db.relationship('User', backref=db.backref('appointments', lazy=True))
-
-    def __repr__(self):
-        return f'<ConsultantAppointment {self.user_id} - {self.consultant_id}>'
-
-
-class ResidencyBlogPost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    slug = db.Column(db.String(200), unique=True, nullable=False, index=True)
-    content = db.Column(db.Text, nullable=False)
-    excerpt = db.Column(db.String(500), nullable=True)
-    category = db.Column(db.String(50), nullable=False)  # Guide, Case Study, News, Tips
-    countries = db.Column(db.String(500), nullable=True)  # Comma-separated
-    author = db.Column(db.String(150), nullable=False)
-    featured_image = db.Column(db.String(255), nullable=True)
-    published = db.Column(db.Boolean, default=False)
+    company_name = db.Column(db.String(200), nullable=True)
+    business_type = db.Column(db.String(100), nullable=True)
+    investment_amount = db.Column(db.String(50), nullable=True)
+    target_country = db.Column(db.String(100), nullable=False)
+    program_type = db.Column(db.String(150), nullable=False)
+    timeline = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(50), default='Pending')  # Pending, Reviewing, Approved, Rejected
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    views = db.Column(db.Integer, default=0)
 
     def __repr__(self):
-        return f'<ResidencyBlogPost {self.title}>'
+        return f'<InvestmentApplication {self.full_name} - {self.program_type}>'
+
+class JobApplication(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    job_id = db.Column(db.String(100), nullable=False)  # CareerJet job ID
+    job_title = db.Column(db.String(200), nullable=False)
+    company = db.Column(db.String(200), nullable=False)
+    location = db.Column(db.String(150), nullable=True)
+    job_url = db.Column(db.String(500), nullable=True)
+    full_name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    resume_url = db.Column(db.String(500), nullable=True)
+    cover_letter = db.Column(db.Text, nullable=True)
+    message = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(50), default='Applied')  # Applied, Viewed, In Review, Rejected, Accepted
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<JobApplication {self.job_title} @ {self.company}>'

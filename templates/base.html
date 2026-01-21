@@ -1,143 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ company_info.name }}{% endblock %}</title>
+    <meta name="description" content="{{ company_info.name }} - Global Investment & Business Migration">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="{{ url_for('static', filename='images/logo.ico') }}" type="image/x-icon">
-    <title>{{ company_info.name }}</title>
 </head>
-
 <body>
-    <nav class="navbar">
+    <header class="py-3 bg-primary text-white">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" style="width:40px;height:40px;margin-right:10px;">
+                <div>
+                    <h4 class="mb-0">{{ company_info.name }}</h4>
+                    <small>Nexora Investments</small>
+                </div>
+            </div>
+            <div>
+                {% if current_user.is_authenticated %}
+                    <div class="dropdown">
+                        <a class="text-white dropdown-toggle" href="#" role="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">{{ current_user.name or current_user.email }}</a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a class="text-white me-3" href="{{ url_for('login') }}">Login</a>
+                    <a class="btn btn-light btn-sm" href="{{ url_for('register') }}">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
-            <h1>Nexora Investments</h1>
-            <h3>By {{ company_info.name }}</h3>
-            <!doctype html>
-            <html lang="en">
-            <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>{% block title %}{{ company_info.name }}{% endblock %}</title>
-                <meta name="description" content="{{ company_info.name }} - Global Investments ">
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-                <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-                <link rel="icon" href="{{ url_for('static', filename='images/logo.ico') }}" type="image/x-icon">
-            </head>
-            <body>
-                <header class="py-3 bg-primary text-white">
-                    <div class="container d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" style="width:40px;height:40px;margin-right:10px;">
-                            <div>
-                                <h4 class="mb-0">{{ company_info.name }}</h4>
-                                <small>Nexora Investments</small>
-                            </div>
-                        </div>
-                        <div>
-                            {% if current_user.is_authenticated %}
-                                <div class="dropdown">
-                                    <a class="text-white dropdown-toggle" href="#" role="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">{{ current_user.name or current_user.email }}</a>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                                        <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
-                                        <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                                    </ul>
-                                </div>
-                            {% else %}
-                                <a class="text-white" href="{{ url_for('login') }}">Login</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </header>
+            <a class="navbar-brand" href="{{ url_for('index') }}">Nexora</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('job_search') }}">🌍 Job Search</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('submit_application') }}">Investment Programs</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('upload_resume') }}">Resume → Europass</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('create_cover_letter') }}">Cover Letter</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('inquiry') }}">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('faq') }}">FAQ</a></li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link text-success" href="{{ url_for('my_job_applications') }}">📋 My Applications</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-                <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                    <div class="container">
-                        <a class="navbar-brand" href="{{ url_for('index') }}">Nexora</a>
-                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                            <span class="navbar-toggler-icon"></span>
-                        </button>
-                        <div class="collapse navbar-collapse" id="navbarNav">
-                            <ul class="navbar-nav ms-auto">
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('residencies') }}">Residencies</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('residency_eligibility') }}">Eligibility</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('residency_calculator') }}">Calculator</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('consultants') }}">Consultants</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('upload_resume') }}">Resume → Europass</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('create_cover_letter') }}">Create Cover Letter</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('visa_requirements') }}">Visa Docs</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('inquiry') }}">Inquiry</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('faq') }}">FAQ</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('about_app') }}">Share</a></li>
-                            </ul>
+    <main class="py-4">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
-                    </div>
-                </nav>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-                <main class="py-4">
-                    <div class="container">
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+    </main>
 
-                        {% block content %}{% endblock %}
-                    </div>
-                </main>
+    <footer class="bg-dark text-white pt-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 footer-section">
+                    <h6>About Nexora</h6>
+                    <p>Global Investment & Business Migration — expert guides, program comparisons, and trusted consultants.</p>
+                </div>
+                <div class="col-md-4 footer-section">
+                    <h6>Company</h6>
+                    <p><strong>{{ company_info.name }}</strong><br>{{ company_info.headquarters }}</p>
+                    <p><a class="text-white" href="mailto:{{ company_info.email }}">{{ company_info.email }}</a><br>
+                    <a class="text-white" href="tel:{{ company_info.phone }}">{{ company_info.phone }}</a></p>
+                </div>
+                <div class="col-md-4 footer-section">
+                    <h6>Help & Policies</h6>
+                    <p>
+                        <a class="text-white" href="{{ url_for('terms') }}">Terms</a> ·
+                        <a class="text-white" href="{{ url_for('privacy') }}">Privacy</a> ·
+                        <a class="text-white" href="{{ url_for('user_agreement') }}">Agreement</a> ·
+                        <a class="text-white" href="{{ url_for('copyright') }}">Copyright</a>
+                    </p>
+                </div>
+            </div>
+            <hr class="bg-secondary">
+            <div class="d-flex justify-content-between small">
+                <div>&copy; {{ now().year }} {{ company_info.name }}. All rights reserved.</div>
+                <div>Nexora — Global Investments Platform</div>
+            </div>
+        </div>
+    </footer>
 
-                <footer class="bg-dark text-white pt-4">
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-md-4 footer-section">
-                                <h6>About Nexora</h6>
-                                <p>Global Investments — expert guides, program comparisons, and trusted consultants.</p>
-                            </div>
-                            <div class="col-md-4 footer-section">
-                                <h6>Company</h6>
-                                <p><strong>{{ company_info.name }}</strong><br>{{ company_info.address }}</p>
-                                <p><a class="text-white" href="mailto:{{ company_info.email }}">{{ company_info.email }}</a></p>
-                            </div>
-                            <div class="col-md-4 footer-section">
-                                <h6>Help & Policies</h6>
-                                <p>
-                                    <a class="text-white" href="{{ url_for('terms') }}">Terms</a> ·
-                                    <a class="text-white" href="{{ url_for('privacy') }}">Privacy</a> ·
-                                    <a class="text-white" href="{{ url_for('user_agreement') }}">User Agreement</a> ·
-                                    <a class="text-white" href="{{ url_for('copyright') }}">Copyright</a>
-                                </p>
-                            </div>
-                            <div class="col-md-4 footer-section">
-                                <h6>Quick Links</h6>
-                                <p>
-                                    <a class="text-white" href="{{ url_for('faq') }}">FAQ</a> ·
-                                    <a class="text-white" href="{{ url_for('inquiry') }}">Contact</a>
-                                </p>
-                                <div class="social mt-2">
-                                    <a class="text-white me-2" href="https://twitter.com/placeholder" target="_blank"><i class="bi bi-twitter"></i></a>
-                                    <a class="text-white me-2" href="https://facebook.com/placeholder" target="_blank"><i class="bi bi-facebook"></i></a>
-                                    <a class="text-white me-2" href="https://linkedin.com/placeholder" target="_blank"><i class="bi bi-linkedin"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <hr class="bg-secondary">
-                        <div class="d-flex justify-content-between small">
-                            <div>&copy; {{ now().year }} {{ company_info.name }}. All rights reserved.</div>
-                            <div>Nexora — Updated weekly</div>
-                        </div>
-                    </div>
-                </footer>
-
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-                {% block scripts %}{% endblock %}
-            </body>
-            </html>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

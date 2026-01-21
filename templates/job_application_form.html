@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="mb-4">
+                <i class="fas fa-file-alt"></i> Job Application
+            </h1>
+
+            <!-- Job Details Card -->
+            <div class="card bg-light mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="card-title mb-1">{{ job_title }}</h5>
+                            <p class="card-text">
+                                <strong class="text-primary">{{ company }}</strong>
+                            </p>
+                            <p class="card-text text-muted">
+                                📍 {{ location }}<br>
+                                <a href="{{ job_url }}" target="_blank" class="text-decoration-none">
+                                    View Original Job Posting →
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ job_url }}" target="_blank" class="btn btn-sm btn-info w-100">
+                                <i class="fas fa-external-link-alt"></i> View Job
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Form -->
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Submit Your Application</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" class="needs-validation">
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="job_title" value="{{ job_title }}">
+                        <input type="hidden" name="company" value="{{ company }}">
+                        <input type="hidden" name="location" value="{{ location }}">
+                        <input type="hidden" name="job_url" value="{{ job_url }}">
+
+                        <!-- Full Name -->
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label fw-bold">
+                                <i class="fas fa-user"></i> Full Name *
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="full_name" name="full_name" 
+                                   value="{% if current_user.is_authenticated %}{{ current_user.name }}{% endif %}"
+                                   placeholder="Your full name" required>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-bold">
+                                <i class="fas fa-envelope"></i> Email Address *
+                            </label>
+                            <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                                   value="{% if current_user.is_authenticated %}{{ current_user.email }}{% endif %}"
+                                   placeholder="your.email@example.com" required>
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="mb-3">
+                            <label for="phone" class="form-label fw-bold">
+                                <i class="fas fa-phone"></i> Phone Number *
+                            </label>
+                            <input type="tel" class="form-control form-control-lg" id="phone" name="phone" 
+                                   value="{% if current_user.is_authenticated %}{{ current_user.phone or '' }}{% endif %}"
+                                   placeholder="+1 (555) 123-4567" required>
+                        </div>
+
+                        <!-- Cover Letter / Message -->
+                        <div class="mb-3">
+                            <label for="message" class="form-label fw-bold">
+                                <i class="fas fa-pen-fancy"></i> Cover Letter / Message
+                            </label>
+                            <textarea class="form-control form-control-lg" id="message" name="message" rows="6" 
+                                      placeholder="Tell the employer why you're interested in this position..."></textarea>
+                            <small class="text-muted">Share your motivation and relevant experience</small>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info">
+                            <strong><i class="fas fa-info-circle"></i> Note:</strong>
+                            {% if current_user.is_authenticated %}
+                                Your profile information is pre-filled. You can upload your resume from your dashboard.
+                            {% else %}
+                                Create an account to save your applications and upload your resume.
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-paper-plane"></i> Submit Application
+                            </button>
+                            <a href="{{ url_for('job_search') }}" class="btn btn-outline-secondary">
+                                ← Back to Job Search
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sign Up CTA -->
+            {% if not current_user.is_authenticated %}
+            <div class="card border-primary mt-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Don't have an account?</h5>
+                    <p class="card-text">Create an account to track your applications and upload your resume</p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus"></i> Sign Up Now
+                        </a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+                            Already have an account? Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

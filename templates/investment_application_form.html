@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Investment Application - {{ company_info.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Investment Application Form</h1>
+    <p>Submit your investment and business migration application.</p>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-4">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="name" class="form-label">Full Name *</label>
+                <input type="text" name="name" id="name" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="email" class="form-label">Email *</label>
+                <input type="email" name="email" id="email" class="form-control" required>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="contact_number" class="form-label">Contact Number *</label>
+                <input type="tel" name="contact_number" id="contact_number" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="company_name" class="form-label">Company Name</label>
+                <input type="text" name="company_name" id="company_name" class="form-control">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="business_type" class="form-label">Business Type</label>
+                <input type="text" name="business_type" id="business_type" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="investment_amount" class="form-label">Investment Amount</label>
+                <input type="text" name="investment_amount" id="investment_amount" class="form-control" placeholder="e.g., $500,000">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="target_country" class="form-label">Target Country *</label>
+                <select name="target_country" id="target_country" class="form-select" required>
+                    <option value="">-- Select Country --</option>
+                    <option value="USA">USA</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Singapore">Singapore</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Portugal">Portugal</option>
+                    <option value="Dubai (UAE)">Dubai (UAE)</option>
+                    <option value="Switzerland">Switzerland</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="program_type" class="form-label">Program Type *</label>
+                <input type="text" name="program_type" id="program_type" class="form-control" required placeholder="e.g., EB-5, E-2">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="timeline" class="form-label">Investment Timeline</label>
+                <input type="text" name="timeline" id="timeline" class="form-control" placeholder="e.g., 6-12 months">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <h4>Supporting Documents</h4>
+            <p class="text-muted">Upload relevant documents to support your application</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="business_plan" class="form-label">Business Plan</label>
+                <input type="file" name="business_plan" id="business_plan" class="form-control" accept=".pdf,.doc,.docx">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="financial_docs" class="form-label">Financial Documents</label>
+                <input type="file" name="financial_docs" id="financial_docs" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="identification" class="form-label">Identification</label>
+                <input type="file" name="identification" id="identification" class="form-control" accept=".pdf,.jpg,.png">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="proof_of_funds" class="form-label">Proof of Funds</label>
+                <input type="file" name="proof_of_funds" id="proof_of_funds" class="form-control" accept=".pdf,.doc,.docx">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="corporate_docs" class="form-label">Corporate Documents</label>
+            <input type="file" name="corporate_docs" id="corporate_docs" class="form-control" accept=".pdf,.doc,.docx">
+        </div>
+
+        <button type="submit" class="btn btn-lg btn-success">Submit Application</button>
+        <a href="{{ url_for('index') }}" class="btn btn-lg btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

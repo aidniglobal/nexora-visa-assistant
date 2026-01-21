@@ -1,58 +1,71 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Welcome to Aidni Global LLP</h1>
-<p>I am Nexora, your personal Foreign Investments assistant.</p>
+<div class="container py-5">
+    <h1>Welcome to Aidni Global LLP</h1>
+    <p class="lead">I am Nexora, your personal Global Investment & Business Migration assistant.</p>
 
-<form action="{{ url_for('get_visa_info_route') }}" method="POST">
-    <label for="country">Choose a country:</label>
-    <select name="country" id="country">
-        <option value="USA">USA</option>
-        <option value="Germany">Germany</option>
-        <option value="Canada">Canada</option>
-        <option value="UK">UK</option>
-        <option value="France">France</option>
-        <option value="Spain">Spain</option>
-        <option value="Portugal">Portugal</option>
-        <option value="Poland">Poland</option>
-        <option value="Australia">Australia</option>
-        <option value="New Zealand">New Zealand</option>
-        <option value="Russia">Russia</option>
-        <option value="China">China</option>
-        <option value="Switzerland">Switzerland</option>
-        <option value="Sweden">Sweden</option>
-        <option value="Norway">Norway</option>
-        <option value="Finland">Finland</option>
-    </select>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h2 class="card-title">Explore Investment Programs</h2>
+            <p class="card-text">Browse global investment and business migration opportunities worldwide.</p>
+            
+            <div class="row mt-4">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label"><strong>Select Country:</strong></label>
+                    <select id="country" class="form-select">
+                        <option value="USA">USA - EB-5 & E-2</option>
+                        <option value="United Kingdom">UK - Innovator & Startup</option>
+                        <option value="Germany">Germany - Self-Employment</option>
+                        <option value="Singapore">Singapore - EntrePass</option>
+                        <option value="Canada">Canada - Start-up Visa</option>
+                        <option value="Australia">Australia - Business Innovation</option>
+                        <option value="Portugal">Portugal - Golden Visa</option>
+                        <option value="Dubai (UAE)">Dubai - Investor Visa</option>
+                        <option value="Switzerland">Switzerland - Entrepreneur</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label"><strong>Investment Program:</strong></label>
+                    <input type="text" id="program_type" class="form-control" placeholder="e.g., EB-5, E-2">
+                </div>
+            </div>
 
-    <label for="visa_type">Choose visa type:</label>
-    <select name="visa_type" id="visa_type">
-        <option value="Visitor Visa">Visitor Visa</option>
-        <option value="Work Permit">Work Permit</option>
-        <option value="Student Visa">Student Visa</option>
-        <option value="Business Visa">Business Visa</option>
-        <option value="Permanent Residency">Permanent Residency</option>
-    </select>
+            <button class="btn btn-primary btn-lg" onclick="alert('Investment details coming soon! Contact us for more information.')">View Program Details</button>
+        </div>
+    </div>
 
-    <button type="submit">Send</button>
-</form>
+    <div class="row mt-5">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Investment Application</h5>
+                    <p class="card-text">Submit your investment and business migration application today.</p>
+                    <a href="#" class="btn btn-outline-primary">Submit Application</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Browse Programs</h5>
+                    <p class="card-text">Explore investment opportunities in your preferred countries.</p>
+                    <a href="{{ url_for('submit_application') }}" class="btn btn-outline-success">View Programs</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-{% if documents %}
-    <h2>Required Documents for {{ visa_type }} ({{ country }}):</h2>
-    <ul>
-        <li>Documents: {{ documents["Documents"] }}</li>
-        <li>Visa Fee: {{ documents["Visa Fee"] }}</li>
-        <li>Processing Time: {{ documents["Processing Time"] }}</li>
-        <li>Embassy Locations: {{ documents["Embassy Locations"] }}</li>
-        <li>Interview Requirement: {{ documents["Interview Requirement"] }}</li>
-        <li>Notes: {{ documents["Notes"] }}</li>
-    </ul>
-    <p><strong>NOTE:</strong> Actual required documents may vary. For further details, feel free to contact us or visit the <a href="{{ url_for('submit_application') }}">Visa Form</a>.</p>
-{% endif %}
+    <div class="alert alert-info mt-5">
+        <h4>Ready to Invest Globally?</h4>
+        <p>Our team at Aidni Global LLP is ready to guide you through your investment and business migration journey.</p>
+        <p><strong>Contact us:</strong> {{ company_info.phone }} | <a href="mailto:{{ company_info.email }}">{{ company_info.email }}</a></p>
+    </div>
 
-<p>For further assistance, fill out the <a href="{{ url_for('submit_application') }}">form</a>. </p>
-<p>Or you can contact us at: +919825728291 or email us at phoenixairticket@gmail.com </p>
-<p>© {{ company_info.name }} | {{ company_info.headquarters }}</p>
-<p>Developed by Hardik Gajjar | All rights reserved</p>
-
+    <hr class="my-5">
+    <div class="text-center text-muted">
+        <p>&copy; {{ now().year }} {{ company_info.name }} | {{ company_info.headquarters }}</p>
+        <p>Developed by Hardik Gajjar | All rights reserved</p>
+    </div>
+</div>
 {% endblock %}

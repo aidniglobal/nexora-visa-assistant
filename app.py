@@ -6,13 +6,14 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 import os
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from models import db, User, Document, UserAgreement, VerifiedDocument, ResidencyApplication, ResidencyProgram, Inquiry
-from visa_data import get_visa_info, company_info
+from models import db, User, Document, UserAgreement, VerifiedDocument, Inquiry, JobApplication
+from investment_data import get_investment_info, company_info
 from datetime import datetime, timezone
 from io import BytesIO
 import io
 from openpyxl import Workbook  # Importing the openpyxl library to create Excel files
 from flask_mail import Mail, Message
+import requests
 from app.europass import create_europass_cv
 
 # Heavy optional libs (WeasyPrint, OCR) are imported lazily in functions to keep lightweight deployments small.
@@ -424,33 +425,33 @@ def create_cover_letter():
 from app.visa_requirements import list_countries, list_visa_types, get_requirements, reload_seed
 
 
-@app.route('/visa-requirements')
-def visa_requirements():
+@app.route('/investment-requirements')
+def investment_requirements():
     country = request.args.get('country')
-    visa_type = request.args.get('visa_type')
+    program_type = request.args.get('program_type')
 
     countries = list_countries()
 
-    data = get_requirements(country=country, visa_type=visa_type) if (country or visa_type) else get_requirements()
+    data = get_requirements(country=country, visa_type=program_type) if (country or program_type) else get_requirements()
 
-    # We'll pass countries list, selected country, selected visa type and requirements data
-    return render_template('visa_requirements.html', countries=countries, selected_country=country, selected_visa_type=visa_type, data=data)
+    # We'll pass countries list, selected country, selected program and requirements data
+    return render_template('investment_requirements.html', countries=countries, selected_country=country, selected_program_type=program_type, data=data)
 
 
-@app.route('/api/visa-requirements')
-def api_visa_requirements():
+@app.route('/api/investment-requirements')
+def api_investment_requirements():
     country = request.args.get('country')
-    visa_type = request.args.get('visa_type')
-    data = get_requirements(country=country, visa_type=visa_type)
+    program_type = request.args.get('program_type')
+    data = get_requirements(country=country, visa_type=program_type)
     return jsonify(data)
 
 
-@app.route('/admin/import-visa-requirements', methods=['GET','POST'])
+@app.route('/admin/import-investment-requirements', methods=['GET','POST'])
 @login_required
-def admin_import_visa():
+def admin_import_investment():
     # Simple admin check
     if not getattr(current_user, 'is_admin', False):
-        return render_template('admin_import_visa.html', countries=[])
+        return render_template('admin_import_investment.html', countries=[])
 
     # show countries list on GET
     countries = list_countries()
@@ -488,7 +489,7 @@ def admin_import_visa():
             try:
                 from app.visa_requirements import SEED_PATH as seed_path
             except Exception:
-                seed_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'visa_requirements_seed.json'))
+                seed_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'investment_requirements_seed.json'))
             os.makedirs(os.path.dirname(seed_path), exist_ok=True)
             with open(seed_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
@@ -497,22 +498,22 @@ def admin_import_visa():
                 reload_seed()
             except Exception:
                 pass
-            flash('Visa requirements imported successfully')
-            return redirect(url_for('visa_requirements'))
+            flash('Investment requirements imported successfully')
+            return redirect(url_for('investment_requirements'))
         except Exception as e:
             print('Import error:', e)
             flash('Error writing seed file')
             return redirect(request.url)
 
-    return render_template('admin_import_visa.html', countries=countries)
+    return render_template('admin_import_investment.html', countries=countries)
 
 
-@app.route('/admin/visa-management', methods=['GET','POST'])
+@app.route('/admin/investment-management', methods=['GET','POST'])
 @login_required
-def admin_visa_manage():
+def admin_investment_manage():
     # admin UI to view countries and restore defaults
     if not getattr(current_user, 'is_admin', False):
-        return render_template('admin_visa_manage.html', countries=[])
+        return render_template('admin_investment_manage.html', countries=[])
 
     from app.visa_requirements import list_countries, restore_default_seed
     countries = list_countries()
@@ -525,19 +526,19 @@ def admin_visa_manage():
                 flash('Failed to restore default seed')
             else:
                 flash('Default seed restored successfully')
-            return redirect(url_for('admin_visa_manage'))
+            return redirect(url_for('admin_investment_manage'))
         elif action == 'download':
             try:
                 from app.visa_requirements import SEED_PATH as seed_path
             except Exception:
-                seed_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'visa_requirements_seed.json'))
+                seed_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'investment_requirements_seed.json'))
             if os.path.exists(seed_path):
                 return send_file(seed_path, as_attachment=True)
             else:
                 flash('Seed file not found')
-                return redirect(url_for('admin_visa_manage'))
+                return redirect(url_for('admin_investment_manage'))
 
-    return render_template('admin_visa_manage.html', countries=countries)
+    return render_template('admin_investment_manage.html', countries=countries)
 
 
 # ---------------- Admin: inquiries ----------------
@@ -863,33 +864,22 @@ def submit_application():
     if request.method == 'POST':
         # Extract form data
         name = request.form['name']
-        gender = request.form['gender']
-        dob = request.form['dob']
-        nationality = request.form['nationality']
-        passport_number = request.form['passport_number']
-        passport_expiry = request.form['passport_expiry']
-        marital_status = request.form['marital_status']
-        address = request.form['address']
-        contact_number = request.form['contact_number']
+        company_name = request.form.get('company_name', '')
+        investment_amount = request.form.get('investment_amount', '')
+        business_type = request.form.get('business_type', '')
+        target_country = request.form['target_country']
+        program_type = request.form['program_type']
+        timeline = request.form.get('timeline', '')
         email = request.form['email']
-        visa_type = request.form['visa_type']
-        country = request.form['country']
-        arrival_date = request.form['arrival_date']
-        duration_of_stay = request.form['duration_of_stay']
-        occupation = request.form.get('occupation', '')
-        employer_name = request.form.get('employer_name', '')
-        employer_address = request.form.get('employer_address', '')
-        education_qualification = request.form.get('education_qualification', '')
-        institution_name = request.form.get('institution_name', '')
-        course_name = request.form.get('course_name', '')
+        contact_number = request.form['contact_number']
 
         # Handle file uploads
         uploaded_files = {
-            "passport_copy": request.files.get('passport_copy'),
-            "education_docs": request.files.get('education_docs'),
-            "employment_letters": request.files.get('employment_letters'),
-            "bank_statements": request.files.get('bank_statements'),
-            "proof_accommodation": request.files.get('proof_accommodation'),
+            "business_plan": request.files.get('business_plan'),
+            "financial_docs": request.files.get('financial_docs'),
+            "identification": request.files.get('identification'),
+            "proof_of_funds": request.files.get('proof_of_funds'),
+            "corporate_docs": request.files.get('corporate_docs'),
         }
 
         # Create a unique folder for each submission (using timestamp or name)
@@ -908,46 +898,39 @@ def submit_application():
         # Prepare data for PDF rendering
         pdf_data = {
             'name': name,
-            'gender': gender,
-            'dob': dob,
-            'nationality': nationality,
-            'passport_number': passport_number,
-            'passport_expiry': passport_expiry,
-            'marital_status': marital_status,
-            'address': address,
-            'contact_number': contact_number,
+            'company_name': company_name,
+            'investment_amount': investment_amount,
+            'business_type': business_type,
+            'target_country': target_country,
+            'program_type': program_type,
+            'timeline': timeline,
             'email': email,
-            'visa_type': visa_type,
-            'country': country,
-            'arrival_date': arrival_date,
-            'duration_of_stay': duration_of_stay,
-            'occupation': occupation,
-            'employer_name': employer_name,
-            'employer_address': employer_address,
-            'education_qualification': education_qualification,
-            'institution_name': institution_name,
-            'course_name': course_name
+            'contact_number': contact_number
         }
 
         # Render the HTML template for PDF
-        html = render_template('visa_application_form.html', **pdf_data)
+        html = render_template('investment_application_form.html', **pdf_data)
 
         # Generate PDF and save it in the submission folder
-        pdf_filename = f"{name.replace(' ', '_')}_visa_application.pdf"
+        pdf_filename = f"{name.replace(' ', '_')}_investment_application.pdf"
         pdf_path = os.path.join(submission_folder, pdf_filename)
-        HTML(string=html).write_pdf(pdf_path)
+        try:
+            from weasyprint import HTML as WeasyHTML
+            WeasyHTML(string=html).write_pdf(pdf_path)
+        except:
+            pass
 
-        flash(f'Visa application submitted successfully! Your submission has been saved in {submission_folder}.', 'success')
+        flash(f'Investment application submitted successfully! Your submission has been saved.', 'success')
         return redirect(url_for('index'))  # Redirect to the home page or confirmation page
 
-    return render_template('visa_application_form.html')
+    return render_template('investment_application_form.html')
 
-@app.route('/get_visa_info', methods=['POST'])
-def get_visa_info_route():
+@app.route('/get_investment_info', methods=['POST'])
+def get_investment_info_route():
     country = request.form.get('country')
-    visa_type = request.form.get('visa_type')
-    documents = get_visa_info(country, visa_type)
-    return render_template('index.html', documents=documents, country=country, visa_type=visa_type, company_info=company_info)
+    program_type = request.form.get('program_type')
+    info = get_investment_info(country, program_type)
+    return render_template('index.html', info=info, country=country, program_type=program_type, company_info=company_info)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -991,305 +974,17 @@ def register():
     return render_template('register.html')
 
 
-# ==================== RESIDENCY ROUTES ====================
+# ==================== INVESTMENT APPLICATION & MANAGEMENT ====================
+# Removed large residency-specific routes in favor of lean investment platform
 
-@app.route('/residencies')
-def residencies():
-    """Browse all residency programs"""
-    from residency_data import get_all_countries
+
+@app.route('/investment-opportunities')
+def investment_opportunities():
+    """Browse global investment opportunities"""
+    from investment_data import get_all_countries
     countries = get_all_countries()
-    return render_template('residencies.html', countries=countries)
+    return render_template('investment_opportunities.html', countries=countries)
 
-
-@app.route('/residencies/<country>')
-def residency_country(country):
-    """View residency programs for a specific country"""
-    from residency_data import residency_programs, get_programs_by_country
-    
-    if country not in residency_programs:
-        flash(f'Country {country} not found')
-        return redirect(url_for('residencies'))
-    
-    programs = residency_programs[country]
-    return render_template('residency_country.html', country=country, programs=programs)
-
-
-@app.route('/residencies/<country>/<program_name>')
-def residency_program_detail(country, program_name):
-    """View details of a specific residency program"""
-    from residency_data import residency_programs
-    
-    if country not in residency_programs:
-        flash('Country not found')
-        return redirect(url_for('residencies'))
-    
-    if program_name not in residency_programs[country]:
-        flash('Program not found')
-        return redirect(url_for('residency_country', country=country))
-    
-    program = residency_programs[country][program_name]
-    saved = False
-    if current_user.is_authenticated:
-        from models import UserSavedProgram
-        saved = UserSavedProgram.query.filter_by(
-            user_id=current_user.id,
-            program_id=program_name  # Using program name as identifier
-        ).first() is not None
-    
-    return render_template('residency_detail.html', country=country, program_name=program_name, program=program, saved=saved)
-
-
-@app.route('/residency-comparison', methods=['GET', 'POST'])
-def residency_comparison():
-    """Compare multiple residency programs"""
-    from residency_data import residency_programs
-    
-    selected_programs = []
-    if request.method == 'POST':
-        program_ids = request.form.getlist('selected_programs')
-        for program_id in program_ids:
-            parts = program_id.split('::')
-            if len(parts) == 2:
-                country, program_name = parts
-                if country in residency_programs and program_name in residency_programs[country]:
-                    selected_programs.append({
-                        'country': country,
-                        'name': program_name,
-                        'data': residency_programs[country][program_name]
-                    })
-    
-    all_countries = list(residency_programs.keys())
-    return render_template('residency_comparison.html', 
-                          all_countries=all_countries, 
-                          selected_programs=selected_programs)
-
-
-@app.route('/residency-filter', methods=['POST'])
-def residency_filter():
-    """Filter residency programs by criteria"""
-    from residency_data import residency_programs, filter_programs
-    
-    filters = {
-        'residency_type': request.form.get('residency_type'),
-        'max_investment': request.form.get('max_investment'),
-        'citizenship_available': request.form.get('citizenship_available') == 'on'
-    }
-    
-    # Remove None values
-    filters = {k: v for k, v in filters.items() if v is not None and v != 'on' and v != ''}
-    
-    if filters.get('max_investment'):
-        filters['max_investment'] = int(filters['max_investment'])
-    
-    results = filter_programs(filters)
-    
-    return render_template('residency_filter_results.html', results=results, filters=filters)
-
-
-@app.route('/residency-calculator')
-def residency_calculator():
-    """ROI and cost calculator for residency programs"""
-    return render_template('residency_calculator.html')
-
-
-@app.route('/api/calculate-roi', methods=['POST'])
-def calculate_roi():
-    """API endpoint for ROI calculations"""
-    data = request.get_json()
-    investment = float(data.get('investment', 0))
-    annual_return_percent = float(data.get('annual_return', 5))
-    years = int(data.get('years', 5))
-    
-    roi = investment * ((1 + annual_return_percent/100) ** years)
-    total_profit = roi - investment
-    
-    return {
-        'initial_investment': investment,
-        'final_value': round(roi, 2),
-        'total_profit': round(total_profit, 2),
-        'years': years
-    }
-
-
-@app.route('/residency-eligibility')
-def residency_eligibility():
-    """Eligibility checker for residency programs"""
-    return render_template('residency_eligibility.html')
-
-
-@app.route('/api/check-eligibility', methods=['POST'])
-def check_eligibility():
-    """API endpoint for eligibility checking"""
-    from residency_data import residency_programs
-    
-    data = request.get_json()
-    investment_budget = float(data.get('investment_budget', 0))
-    income = float(data.get('income', 0))
-    citizenship_wanted = data.get('citizenship_wanted') == 'true'
-    preferred_countries = data.get('preferred_countries', [])
-    
-    eligible_programs = []
-    
-    for country in preferred_countries if preferred_countries else residency_programs.keys():
-        if country not in residency_programs:
-            continue
-        
-        for program_name, program_data in residency_programs[country].items():
-            eligibility_score = 100
-            reasons = []
-            
-            # Check investment
-            if 'investment_types' in program_data:
-                min_investment = None
-                for inv_type, inv_data in program_data['investment_types'].items():
-                    amount_str = inv_data['minimum'].replace('€', '').replace('£', '').replace('CAD $', '').replace('AUD $', '').replace('AED ', '').replace('SGD $', '').replace('/year', '').replace(',', '').strip()
-                    try:
-                        amount = float(amount_str)
-                        if min_investment is None or amount < min_investment:
-                            min_investment = amount
-                    except:
-                        pass
-                
-                if min_investment and investment_budget < min_investment:
-                    eligibility_score -= 30
-                    reasons.append(f"Investment requirement: ${min_investment:,.0f}")
-            
-            # Check income
-            if program_data.get('minimum_income'):
-                income_str = program_data['minimum_income'].replace('€', '').replace('$', '').replace('/month', '').replace(',', '').strip()
-                try:
-                    min_income = float(income_str)
-                    if income < min_income * 12:
-                        eligibility_score -= 20
-                        reasons.append(f"Income requirement: ${min_income:,.0f}/month")
-                except:
-                    pass
-            
-            # Check citizenship path
-            if citizenship_wanted:
-                if 'No citizenship path' in program_data.get('path_to_citizenship', ''):
-                    eligibility_score -= 40
-                    reasons.append("No citizenship path available")
-                else:
-                    reasons.append(f"Citizenship: {program_data.get('path_to_citizenship', 'N/A')}")
-            
-            if eligibility_score >= 50:
-                eligible_programs.append({
-                    'country': country,
-                    'program': program_name,
-                    'score': max(0, eligibility_score),
-                    'reasons': reasons
-                })
-    
-    # Sort by eligibility score
-    eligible_programs.sort(key=lambda x: x['score'], reverse=True)
-    
-    return {'eligible_programs': eligible_programs[:10]}
-
-
-@app.route('/save-program', methods=['POST'])
-@login_required
-def save_program():
-    """Save a residency program to user's favorites"""
-    from models import UserSavedProgram
-    
-    country = request.form.get('country')
-    program_name = request.form.get('program_name')
-    
-    # Check if already saved
-    existing = UserSavedProgram.query.filter_by(
-        user_id=current_user.id
-    ).first()
-    
-    if not existing:
-        saved = UserSavedProgram(
-            user_id=current_user.id,
-            program_id=f"{country}::{program_name}"
-        )
-        db.session.add(saved)
-        db.session.commit()
-        flash('Program saved successfully!', 'success')
-    else:
-        flash('Program already saved', 'info')
-    
-    return redirect(request.referrer or url_for('residencies'))
-
-
-@app.route('/my-residency-applications')
-@login_required
-def my_residency_applications():
-    """View user's residency applications"""
-    from models import ResidencyApplication
-    
-    applications = ResidencyApplication.query.filter_by(user_id=current_user.id).all()
-    return render_template('my_residency_applications.html', applications=applications)
-
-
-@app.route('/consultants')
-def consultants():
-    """View available consultants"""
-    from models import ResidencyConsultant
-    
-    page = request.args.get('page', 1, type=int)
-    specialization = request.args.get('specialization')
-    
-    query = ResidencyConsultant.query.filter_by(verified=True)
-    if specialization:
-        query = query.filter(ResidencyConsultant.specializations.contains(specialization))
-    
-    consultants_list = query.order_by(ResidencyConsultant.rating.desc()).paginate(page=page, per_page=12)
-    
-    return render_template('consultants.html', consultants=consultants_list)
-
-
-@app.route('/consultant/<int:consultant_id>')
-def consultant_profile(consultant_id):
-    """View consultant profile"""
-    from models import ResidencyConsultant
-    from flask import abort
-    consultant = db.session.get(ResidencyConsultant, consultant_id)
-    if not consultant:
-        abort(404)
-    return render_template('consultant_profile.html', consultant=consultant)
-
-
-@app.route('/book-consultation', methods=['GET', 'POST'])
-@login_required
-def book_consultation():
-    """Book a consultation with a consultant"""
-    from models import ResidencyConsultant, ConsultantAppointment
-    
-    if request.method == 'POST':
-        consultant_id = request.form.get('consultant_id')
-        scheduled_at = request.form.get('scheduled_at')
-        duration = request.form.get('duration', 30)
-        notes = request.form.get('notes')
-        
-        consultant = db.session.get(ResidencyConsultant, consultant_id)
-        from flask import abort
-        if not consultant:
-            abort(404)
-        try:
-            from datetime import datetime
-            scheduled_datetime = datetime.fromisoformat(scheduled_at)
-            
-            appointment = ConsultantAppointment(
-                user_id=current_user.id,
-                consultant_id=consultant_id,
-                scheduled_at=scheduled_datetime,
-                duration_minutes=int(duration),
-                notes=notes
-            )
-            db.session.add(appointment)
-            db.session.commit()
-            
-            flash('Consultation booked successfully!', 'success')
-            return redirect(url_for('my_residency_applications'))
-        except Exception as e:
-            flash(f'Error booking consultation: {str(e)}', 'danger')
-    
-    consultants_list = ResidencyConsultant.query.filter_by(verified=True).all()
-    return render_template('book_consultation.html', consultants=consultants_list)
 
 @app.route('/about-app')
 def about_app():
@@ -1298,7 +993,7 @@ def about_app():
         with open('about_app_copy.md', 'r') as f:
             about_text = f.read()
     except Exception:
-        about_text = "Nexora — Global Residency & Visa Platform\nVisit: http://localhost:5000"
+        about_text = "Nexora — Global Investment & Business Migration Platform\nVisit: http://localhost:5000"
     return render_template('about_app_copy.html', about_text=about_text)
 
 
@@ -1309,7 +1004,7 @@ def about_us():
         with open('about_app_copy.md', 'r') as f:
             about_text = f.read()
     except Exception:
-        about_text = "Nexora — Global Residency & Visa Platform\nVisit: http://localhost:5000"
+        about_text = "Nexora — Global Investment & Business Migration Platform\nVisit: http://localhost:5000"
     return render_template('about_us_share.html', about_text=about_text)
 
 
@@ -1318,37 +1013,170 @@ def copyright():
     return render_template('copyright.html')
 
 
-@app.route('/residency-blog')
-def residency_blog():
-    """View residency blog posts"""
-    from models import ResidencyBlogPost
-    
+# ==================== JOB SEARCH ROUTES ====================
+
+@app.route('/job-search', methods=['GET', 'POST'])
+def job_search():
+    """Search for jobs using CareerJet API"""
+    jobs = []
+    total_jobs = 0
+    error_message = None
+    search_performed = False
+    keywords = request.args.get('keywords', '')
+    location = request.args.get('location', '')
     page = request.args.get('page', 1, type=int)
-    category = request.args.get('category')
     
-    query = ResidencyBlogPost.query.filter_by(published=True)
-    if category:
-        query = query.filter_by(category=category)
+    if request.method == 'POST' or (keywords and location):
+        search_performed = True
+        keywords = request.form.get('keywords', '') or keywords
+        location = request.form.get('location', '') or location
+        
+        try:
+            # Call CareerJet API
+            api_url = "https://www.careerjet.com/search"
+            affid = "e3d87b7add4fcd05eec550a31d81acb9"
+            
+            params = {
+                "affid": affid,
+                "keywords": keywords,
+                "location": location,
+                "pagesize": 15,
+                "page": page
+            }
+            
+            # Make request with timeout
+            response = requests.get(api_url, params=params, timeout=8)
+            
+            if response.status_code == 200:
+                data = response.json()
+                jobs = data.get('jobs', [])
+                total_jobs = data.get('hits', 0)
+                
+                # Parse jobs into consistent format
+                formatted_jobs = []
+                for job in jobs:
+                    formatted_jobs.append({
+                        'id': job.get('job_id'),
+                        'title': job.get('title'),
+                        'company': job.get('company'),
+                        'location': job.get('locations', [job.get('location', 'Not specified')]),
+                        'salary': job.get('salary', 'Not specified'),
+                        'description': job.get('description', ''),
+                        'url': job.get('url'),
+                        'date': job.get('date')
+                    })
+                jobs = formatted_jobs
+            else:
+                error_message = f"API Error: {response.status_code}"
+                
+        except requests.exceptions.Timeout:
+            error_message = "Search timed out. Please try again with different parameters."
+        except requests.exceptions.RequestException as e:
+            error_message = f"Error fetching jobs: {str(e)}"
+        except Exception as e:
+            error_message = f"An error occurred: {str(e)}"
     
-    posts = query.order_by(ResidencyBlogPost.created_at.desc()).paginate(page=page, per_page=10)
-    return render_template('residency_blog.html', posts=posts)
+    return render_template('job_search.html', 
+                         jobs=jobs, 
+                         total_jobs=total_jobs,
+                         error_message=error_message,
+                         search_performed=search_performed,
+                         keywords=keywords,
+                         location=location,
+                         page=page)
 
 
-@app.route('/residency-blog/<slug>')
-def residency_blog_post(slug):
-    """View individual blog post"""
-    from models import ResidencyBlogPost
-    from flask import abort
+@app.route('/job-application/<job_id>', methods=['GET', 'POST'])
+def job_application(job_id):
+    """Submit job application"""
+    if request.method == 'POST':
+        try:
+            full_name = request.form.get('full_name')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            message = request.form.get('message', '')
+            
+            # Get job details from request
+            job_title = request.form.get('job_title')
+            company = request.form.get('company')
+            location = request.form.get('location')
+            job_url = request.form.get('job_url')
+            
+            # Create job application
+            job_app = JobApplication(
+                user_id=current_user.id if current_user.is_authenticated else None,
+                job_id=job_id,
+                job_title=job_title,
+                company=company,
+                location=location,
+                job_url=job_url,
+                full_name=full_name,
+                email=email,
+                phone=phone,
+                message=message,
+                status='Applied'
+            )
+            
+            db.session.add(job_app)
+            db.session.commit()
+            
+            # Send confirmation email
+            try:
+                msg = Message(
+                    subject=f"Application Submitted - {job_title}",
+                    recipients=[email],
+                    body=f"""Dear {full_name},
+
+Your application for {job_title} at {company} has been submitted successfully!
+
+We have forwarded your details to the employer. Please check the job posting for further instructions.
+
+Job: {job_title}
+Company: {company}
+Location: {location}
+Applied on: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+Best regards,
+Nexora Global - Career Services
+
+For more opportunities, visit: https://nexora.com/job-search
+"""
+                )
+                mail.send(msg)
+            except Exception as e:
+                print(f"Email error: {e}")
+            
+            flash(f'✅ Application submitted successfully for {job_title}!', 'success')
+            return redirect(url_for('job_search'))
+            
+        except Exception as e:
+            flash(f'❌ Error submitting application: {str(e)}', 'danger')
+            return redirect(url_for('job_search'))
     
-    post = ResidencyBlogPost.query.filter_by(slug=slug, published=True).first()
-    if not post:
-        abort(404)
+    # GET request - show application form
+    job_title = request.args.get('job_title', '')
+    company = request.args.get('company', '')
+    location = request.args.get('location', '')
+    job_url = request.args.get('job_url', '')
     
-    # Increment view count
-    post.views = (post.views or 0) + 1
-    db.session.commit()
+    return render_template('job_application_form.html',
+                         job_id=job_id,
+                         job_title=job_title,
+                         company=company,
+                         location=location,
+                         job_url=job_url)
+
+
+@app.route('/my-job-applications')
+@login_required
+def my_job_applications():
+    """View all job applications for current user"""
+    page = request.args.get('page', 1, type=int)
+    job_apps = JobApplication.query.filter_by(user_id=current_user.id).order_by(
+        JobApplication.created_at.desc()
+    ).paginate(page=page, per_page=10)
     
-    return render_template('residency_blog_post.html', post=post)
+    return render_template('my_job_applications.html', job_apps=job_apps)
 
 
 if __name__ == '__main__':

@@ -71,6 +71,7 @@ def create_app(test_config: dict | None = None):
         app.add_url_rule('/about_app', 'about_app', lambda: render_template('about_app_copy.html'))
         app.add_url_rule('/upload_resume', 'upload_resume', lambda: render_template('upload_resume.html'))
         app.add_url_rule('/create_cover_letter', 'create_cover_letter', lambda: render_template('create_cover_letter.html'))
+        app.add_url_rule('/submit_application', 'submit_application', lambda: render_template('visa_application_form.html'), methods=['GET','POST'])
         app.add_url_rule('/visa-requirements', 'visa_requirements', lambda: render_template('visa_requirements.html'))
         app.add_url_rule('/terms', 'terms', lambda: render_template('terms.html'))
         app.add_url_rule('/privacy', 'privacy', lambda: render_template('privacy.html'))
@@ -84,6 +85,9 @@ def create_app(test_config: dict | None = None):
         app.add_url_rule('/profile', 'profile', lambda: render_template('profile.html'))
         app.add_url_rule('/logout', 'logout', lambda: redirect(url_for('login')))
         app.add_url_rule('/inquiry', 'inquiry', lambda: render_template('inquiry.html'), methods=['GET','POST'])
+        # Job search routes
+        app.add_url_rule('/job-search', 'job_search', lambda: render_template('job_search.html'), methods=['GET','POST'])
+        app.add_url_rule('/my-job-applications', 'my_job_applications', lambda: render_template('my_job_applications.html'))
 
     except Exception:
         pass

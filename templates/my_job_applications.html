@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <h1 class="mb-4">
+                <i class="fas fa-briefcase"></i> My Job Applications
+            </h1>
+
+            {% if job_apps.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Applied On</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in job_apps.items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ app.job_title }}</strong>
+                                </td>
+                                <td>{{ app.company }}</td>
+                                <td>{{ app.location }}</td>
+                                <td>
+                                    {% if app.status == 'Applied' %}
+                                        <span class="badge bg-info">Submitted</span>
+                                    {% elif app.status == 'Viewed' %}
+                                        <span class="badge bg-primary">Viewed</span>
+                                    {% elif app.status == 'In Review' %}
+                                        <span class="badge bg-warning text-dark">Under Review</span>
+                                    {% elif app.status == 'Rejected' %}
+                                        <span class="badge bg-danger">Not Selected</span>
+                                    {% elif app.status == 'Accepted' %}
+                                        <span class="badge bg-success">Accepted</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ app.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ app.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <a href="{{ app.job_url }}" target="_blank" class="btn btn-sm btn-info">
+                                        <i class="fas fa-external-link-alt"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if job_apps.pages > 1 %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if job_apps.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ job_apps.prev_num }}">Previous</a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in job_apps.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num == job_apps.page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if job_apps.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ job_apps.next_num }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                <div class="mt-4">
+                    <a href="{{ url_for('job_search') }}" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search More Jobs
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center py-5">
+                    <h5>No Applications Yet</h5>
+                    <p class="mb-3">You haven't submitted any job applications yet.</p>
+                    <a href="{{ url_for('job_search') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-search"></i> Start Job Search
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

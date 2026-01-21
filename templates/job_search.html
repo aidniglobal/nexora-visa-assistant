@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="mb-4 text-center">🌍 Global Job Search</h1>
+            <p class="lead text-center text-muted mb-4">Search for career opportunities worldwide</p>
+            
+            <!-- Search Form -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-body p-4">
+                    <form method="POST" class="needs-validation">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="keywords" class="form-label fw-bold">Job Title / Keywords</label>
+                                <input type="text" class="form-control form-control-lg" id="keywords" name="keywords" 
+                                       value="{{ keywords }}" placeholder="e.g. Python Developer, Data Scientist" required>
+                                <small class="text-muted">Enter job title or skills</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="location" class="form-label fw-bold">Location / Country</label>
+                                <input type="text" class="form-control form-control-lg" id="location" name="location" 
+                                       value="{{ location }}" placeholder="e.g. USA, Germany, Singapore" required>
+                                <small class="text-muted">Enter city or country</small>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-search"></i> Search Jobs
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            {% if error_message %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>⚠️ Notice:</strong> {{ error_message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <!-- Search Results -->
+            {% if search_performed and not error_message %}
+                {% if jobs %}
+                    <div class="alert alert-info">
+                        <strong>Found {{ total_jobs }} job(s)</strong> matching your search
+                    </div>
+
+                    <div class="row">
+                        {% for job in jobs %}
+                        <div class="col-12 mb-3">
+                            <div class="card job-card border-left-success h-100">
+                                <div class="card-body">
+                                    <div class="row align-items-start">
+                                        <div class="col-md-8">
+                                            <h5 class="card-title mb-1">
+                                                <a href="{{ job.url }}" target="_blank" class="text-decoration-none">
+                                                    {{ job.title }}
+                                                </a>
+                                            </h5>
+                                            <p class="card-text mb-2">
+                                                <strong class="text-primary">{{ job.company }}</strong>
+                                            </p>
+                                            <p class="card-text small text-muted mb-2">
+                                                📍 {{ job.location if job.location is string else job.location|join(', ') }}<br>
+                                                💰 {{ job.salary }}<br>
+                                                📅 {{ job.date }}
+                                            </p>
+                                            {% if job.description %}
+                                            <p class="card-text text-muted">
+                                                {{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4 text-md-end">
+                                            <a href="{% if current_user.is_authenticated %}/job-application/{{ job.id }}?job_title={{ job.title|urlencode }}&company={{ job.company|urlencode }}&location={{ (job.location if job.location is string else job.location|join(', '))|urlencode }}&job_url={{ job.url|urlencode }}{% else %}{{ url_for('register') }}{% endif %}" 
+                                               class="btn btn-success mb-2 w-100">
+                                                {% if current_user.is_authenticated %}
+                                                <i class="fas fa-paper-plane"></i> Apply Now
+                                                {% else %}
+                                                <i class="fas fa-user-plus"></i> Sign Up to Apply
+                                                {% endif %}
+                                            </a>
+                                            <a href="{{ job.url }}" target="_blank" class="btn btn-outline-info w-100 mb-2">
+                                                <i class="fas fa-external-link-alt"></i> View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if page > 1 or jobs|length >= 15 %}
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?keywords={{ keywords }}&location={{ location }}&page={{ page - 1 }}">
+                                    ← Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li class="page-item active">
+                                <span class="page-link">Page {{ page }}</span>
+                            </li>
+                            {% if jobs|length >= 15 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?keywords={{ keywords }}&location={{ location }}&page={{ page + 1 }}">
+                                    Next →
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                {% else %}
+                    <div class="alert alert-warning text-center">
+                        <h5>No jobs found</h5>
+                        <p class="mb-0">Try different keywords or location. Adjust your search and try again.</p>
+                    </div>
+                {% endif %}
+            {% elif not search_performed %}
+                <div class="alert alert-info text-center">
+                    <p class="mb-0">Enter your job title and location to start searching for opportunities worldwide</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.job-card {
+    border-left: 4px solid #28a745 !important;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.job-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn {
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}

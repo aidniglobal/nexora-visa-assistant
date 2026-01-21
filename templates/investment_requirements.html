@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Investment Requirements - {{ company_info.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Investment Program Requirements</h1>
+    <p>Find detailed requirements for investment programs by country.</p>
+
+    <form method="GET" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="country" class="form-label">Select Country:</label>
+                <select name="country" id="country" class="form-select">
+                    <option value="">-- All Countries --</option>
+                    {% for country in countries %}
+                        <option value="{{ country }}" {% if selected_country == country %}selected{% endif %}>{{ country }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="program_type" class="form-label">Program Type:</label>
+                <input type="text" name="program_type" id="program_type" class="form-control" placeholder="e.g., EB-5, E-2" value="{{ selected_program_type or '' }}">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Search</button>
+    </form>
+
+    {% if data %}
+        <div class="alert alert-info">
+            <h4>Found Programs</h4>
+            <pre>{{ data }}</pre>
+        </div>
+    {% endif %}
+
+    <div class="mt-5">
+        <h3>Need Help?</h3>
+        <p><a href="{{ url_for('inquiry') }}" class="btn btn-secondary">Contact Us</a></p>
+    </div>
+</div>
+{% endblock %}
