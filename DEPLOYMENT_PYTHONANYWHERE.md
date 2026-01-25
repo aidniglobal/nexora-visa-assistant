@@ -6,8 +6,8 @@
 
 2. Clone the repository and install dependencies:
 
-    git clone https://github.com/youruser/nexora-visa-assistant.git
-    cd nexora-visa-assistant
+    git clone https://github.com/youruser/nexora-investments.git
+    cd nexora-investments
     workon nexora-venv
     pip install -r requirements.txt
 
@@ -38,13 +38,13 @@ For constrained storage (e.g., 500 MB total): prefer a lightweight install using
 5. Configure the WSGI file (PythonAnywhere Web tab) — add at top:
 
     import sys, os
-    path = '/home/<youruser>/nexora-visa-assistant'
+    path = '/home/<youruser>/nexora-investments'
     if path not in sys.path:
         sys.path.insert(0, path)
 
     from app import app as application
 
-6. Static files: set the Static files mapping in Web tab to serve `/static/` from `/home/<youruser>/nexora-visa-assistant/static/`.
+6. Static files: set the Static files mapping in Web tab to serve `/static/` from `/home/<youruser>/nexora-investments/static/`.
 
 7. Reload the web app and check logs on PythonAnywhere if anything fails.
 
