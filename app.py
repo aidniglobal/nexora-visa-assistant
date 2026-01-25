@@ -1031,50 +1031,61 @@ def job_search():
         keywords = request.form.get('keywords', '') or keywords
         location = request.form.get('location', '') or location
         
-        try:
-            # Call CareerJet API
-            api_url = "https://www.careerjet.com/search"
-            affid = "e3d87b7add4fcd05eec550a31d81acb9"
-            
-            params = {
-                "affid": affid,
-                "keywords": keywords,
-                "location": location,
-                "pagesize": 15,
-                "page": page
-            }
-            
-            # Make request with timeout
-            response = requests.get(api_url, params=params, timeout=8)
-            
-            if response.status_code == 200:
-                data = response.json()
-                jobs = data.get('jobs', [])
-                total_jobs = data.get('hits', 0)
+        if keywords and location:
+            try:
+                # Call CareerJet API with proper error handling
+                api_url = "https://www.careerjet.com/search"
+                affid = "e3d87b7add4fcd05eec550a31d81acb9"
                 
-                # Parse jobs into consistent format
-                formatted_jobs = []
-                for job in jobs:
-                    formatted_jobs.append({
-                        'id': job.get('job_id'),
-                        'title': job.get('title'),
-                        'company': job.get('company'),
-                        'location': job.get('locations', [job.get('location', 'Not specified')]),
-                        'salary': job.get('salary', 'Not specified'),
-                        'description': job.get('description', ''),
-                        'url': job.get('url'),
-                        'date': job.get('date')
-                    })
-                jobs = formatted_jobs
-            else:
-                error_message = f"API Error: {response.status_code}"
+                params = {
+                    "affid": affid,
+                    "keywords": keywords,
+                    "location": location,
+                    "pagesize": 15,
+                    "page": page,
+                    "sort": "relevance"
+                }
                 
-        except requests.exceptions.Timeout:
-            error_message = "Search timed out. Please try again with different parameters."
-        except requests.exceptions.RequestException as e:
-            error_message = f"Error fetching jobs: {str(e)}"
-        except Exception as e:
-            error_message = f"An error occurred: {str(e)}"
+                # Make request with timeout and better error handling
+                response = requests.get(api_url, params=params, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    jobs = data.get('jobs', [])
+                    total_jobs = data.get('hits', 0)
+                    
+                    if not jobs:
+                        error_message = f"No jobs found for '{keywords}' in '{location}'. Try different search terms."
+                    else:
+                        # Parse jobs into consistent format
+                        formatted_jobs = []
+                        for job in jobs:
+                            formatted_jobs.append({
+                                'id': job.get('job_id', 'unknown'),
+                                'title': job.get('title', 'Untitled'),
+                                'company': job.get('company', 'Unknown Company'),
+                                'location': job.get('locations', [job.get('location', 'Not specified')]),
+                                'salary': job.get('salary', 'Not specified'),
+                                'description': job.get('description', 'No description available'),
+                                'url': job.get('url', '#'),
+                                'date': job.get('date', 'Recently posted')
+                            })
+                        jobs = formatted_jobs
+                else:
+                    error_message = f"API Error: {response.status_code}. Please try again later."
+                    
+            except requests.exceptions.Timeout:
+                error_message = "Search timed out. Please try again with different parameters or fewer results."
+            except requests.exceptions.ConnectionError:
+                error_message = "Connection error. Please check your internet connection and try again."
+            except requests.exceptions.RequestException as e:
+                error_message = f"Error fetching jobs: {str(e)}. Please try again."
+            except ValueError:
+                error_message = "Invalid response from job server. Please try again."
+            except Exception as e:
+                error_message = f"An unexpected error occurred: {str(e)}. Please try again."
+        else:
+            error_message = "Please enter both job keywords and location."
     
     return render_template('job_search.html', 
                          jobs=jobs, 
@@ -1087,8 +1098,9 @@ def job_search():
 
 
 @app.route('/job-application/<job_id>', methods=['GET', 'POST'])
+@login_required
 def job_application(job_id):
-    """Submit job application"""
+    """Submit job application - requires login"""
     if request.method == 'POST':
         try:
             full_name = request.form.get('full_name')
@@ -1177,6 +1189,157 @@ def my_job_applications():
     ).paginate(page=page, per_page=10)
     
     return render_template('my_job_applications.html', job_apps=job_apps)
+
+
+@app.route('/create-resume', methods=['GET', 'POST'])
+@login_required
+def create_resume():
+    """Create and manage resume for logged-in user"""
+    if request.method == 'POST':
+        try:
+            # Get form data
+            full_name = request.form.get('full_name', '')
+            email = request.form.get('email', '')
+            phone = request.form.get('phone', '')
+            location = request.form.get('location', '')
+            headline = request.form.get('headline', '')
+            summary = request.form.get('summary', '')
+            skills = request.form.get('skills', '')
+            experience = request.form.get('experience', '')
+            education = request.form.get('education', '')
+            
+            if not all([full_name, email, phone]):
+                flash('Name, email, and phone are required.', 'danger')
+                return render_template('create_resume.html')
+            
+            # Save resume data to user profile or session
+            current_user.full_name = full_name
+            current_user.phone = phone
+            
+            # Store additional resume data in a simple format (could use additional model)
+            resume_data = {
+                'full_name': full_name,
+                'email': email,
+                'phone': phone,
+                'location': location,
+                'headline': headline,
+                'summary': summary,
+                'skills': skills,
+                'experience': experience,
+                'education': education,
+                'created_at': datetime.now(timezone.utc)
+            }
+            
+            db.session.commit()
+            
+            flash('✅ Resume data saved successfully! You can now download your resume.', 'success')
+            return redirect(url_for('view_resume'))
+            
+        except Exception as e:
+            flash(f'❌ Error saving resume: {str(e)}', 'danger')
+            return render_template('create_resume.html')
+    
+    return render_template('create_resume.html', user=current_user)
+
+
+@app.route('/view-resume')
+@login_required
+def view_resume():
+    """View user's resume"""
+    user = current_user
+    if not hasattr(user, 'phone') or not user.phone:
+        flash('Please create your resume first.', 'warning')
+        return redirect(url_for('create_resume'))
+    
+    return render_template('view_resume.html', user=user)
+
+
+@app.route('/download-resume/<format>')
+@login_required
+def download_resume(format):
+    """Download resume in PDF or Word format"""
+    try:
+        user = current_user
+        
+        if format == 'europass':
+            # Generate Europass CV
+            user_data = {
+                'name': user.full_name or user.username,
+                'email': user.email
+            }
+            
+            # Get photo if exists
+            photo_path = None
+            profile_pic = os.path.join(PHOTOS_FOLDER, f'{user.id}_profile.jpg')
+            if os.path.exists(profile_pic):
+                photo_path = profile_pic
+            
+            output_path = create_europass_cv(user_data, photo_path=photo_path)
+            return send_file(output_path, as_attachment=True, 
+                           download_name=f'{user.full_name or user.username}_Europass.pdf')
+        
+        elif format == 'pdf':
+            # Generate PDF resume
+            try:
+                from weasyprint import HTML, CSS
+                html_content = f"""
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; margin: 40px; }}
+                        .header {{ text-align: center; margin-bottom: 30px; border-bottom: 2px solid #007bff; padding-bottom: 20px; }}
+                        .name {{ font-size: 24px; font-weight: bold; }}
+                        .contact {{ color: #666; margin-top: 10px; }}
+                        .section {{ margin-top: 20px; }}
+                        .section-title {{ font-size: 16px; font-weight: bold; color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 5px; }}
+                        .content {{ margin-top: 10px; line-height: 1.6; white-space: pre-wrap; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="name">{user.full_name or user.username}</div>
+                        <div class="contact">
+                            📧 {user.email} | 📱 {user.phone or 'N/A'} | 📍 {getattr(user, 'location', 'N/A')}
+                        </div>
+                        <div class="contact">{getattr(user, 'headline', 'Professional')}</div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">PROFESSIONAL SUMMARY</div>
+                        <div class="content">{getattr(user, 'summary', 'Not provided')}</div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">SKILLS</div>
+                        <div class="content">{getattr(user, 'skills', 'Not provided')}</div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">EXPERIENCE</div>
+                        <div class="content">{getattr(user, 'experience', 'Not provided')}</div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">EDUCATION</div>
+                        <div class="content">{getattr(user, 'education', 'Not provided')}</div>
+                    </div>
+                </body>
+                </html>
+                """
+                HTML(string=html_content).write_pdf(f'/tmp/{user.username}_resume.pdf')
+                return send_file(f'/tmp/{user.username}_resume.pdf', as_attachment=True,
+                               download_name=f'{user.full_name or user.username}_Resume.pdf')
+            except ImportError:
+                flash('PDF generation not available. Please use Europass format.', 'warning')
+                return redirect(url_for('view_resume'))
+        
+        else:
+            flash('Invalid format requested.', 'danger')
+            return redirect(url_for('view_resume'))
+            
+    except Exception as e:
+        flash(f'Error downloading resume: {str(e)}', 'danger')
+        return redirect(url_for('view_resume'))
 
 
 if __name__ == '__main__':

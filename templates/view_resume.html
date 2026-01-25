@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            
+            <!-- Alert Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'danger' else 'warning' if category == 'warning' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Resume Header with Actions -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-file-alt"></i> Your Professional Resume
+                    </h3>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('create_resume') }}" class="btn btn-light btn-sm">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <div class="btn-group" role="group">
+                            <button id="downloadBtn" type="button" class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="downloadBtn">
+                                <li><a class="dropdown-item" href="{{ url_for('download_resume', format='europass') }}">
+                                    <i class="fas fa-file-pdf"></i> Europass CV (PDF)
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('download_resume', format='pdf') }}">
+                                    <i class="fas fa-file-pdf"></i> Standard Resume (PDF)
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resume Content -->
+                <div class="card-body p-5" id="resumeContent">
+                    
+                    <!-- Header Section -->
+                    <div class="text-center mb-4 pb-4 border-bottom">
+                        <h1 class="mb-1">{{ user.full_name or user.name or user.username }}</h1>
+                        {% if user.headline %}
+                        <h5 class="text-muted">{{ user.headline }}</h5>
+                        {% endif %}
+                        <div class="text-muted">
+                            {% if user.email %}
+                            📧 {{ user.email }}
+                            {% endif %}
+                            {% if user.phone %}
+                            | 📱 {{ user.phone }}
+                            {% endif %}
+                            {% if user.location %}
+                            | 📍 {{ user.location }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Professional Summary -->
+                    {% if user.summary %}
+                    <section class="mb-4">
+                        <h4 class="section-title">Professional Summary</h4>
+                        <p class="text-muted">{{ user.summary }}</p>
+                    </section>
+                    {% endif %}
+
+                    <!-- Skills Section -->
+                    {% if user.skills %}
+                    <section class="mb-4">
+                        <h4 class="section-title">Key Skills</h4>
+                        <div class="skills-content">
+                            {% for skill in user.skills.split('\n') %}
+                                {% if skill.strip() %}
+                                <span class="badge bg-info me-2 mb-2">{{ skill.strip().replace('-', '').strip() }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    <!-- Professional Experience -->
+                    {% if user.experience %}
+                    <section class="mb-4">
+                        <h4 class="section-title">Professional Experience</h4>
+                        <div class="experience-content">
+                            {% for line in user.experience.split('\n') %}
+                                {% if line.strip() %}
+                                <p class="mb-1 {% if '(' in line and ')' in line %}fw-bold{% endif %}">{{ line }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    <!-- Education Section -->
+                    {% if user.education %}
+                    <section class="mb-4">
+                        <h4 class="section-title">Education</h4>
+                        <div class="education-content">
+                            {% for line in user.education.split('\n') %}
+                                {% if line.strip() %}
+                                <p class="mb-1 {% if '(' in line and ')' in line %}fw-bold{% endif %}">{{ line }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <!-- Additional Actions -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                <i class="fas fa-edit fa-2x text-primary mb-3"></i><br>
+                                Update Your Resume
+                            </h5>
+                            <p class="card-text">Keep your resume up-to-date with the latest skills and experience.</p>
+                            <a href="{{ url_for('create_resume') }}" class="btn btn-primary">Edit Resume</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                <i class="fas fa-briefcase fa-2x text-success mb-3"></i><br>
+                                Apply for Jobs
+                            </h5>
+                            <p class="card-text">Use your resume to apply for job opportunities worldwide.</p>
+                            <a href="{{ url_for('job_search') }}" class="btn btn-success">Search Jobs</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .section-title {
+        font-weight: 700;
+        color: #007bff;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .skills-content .badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .experience-content p,
+    .education-content p {
+        line-height: 1.6;
+    }
+
+    #resumeContent {
+        background-color: #f9f9f9;
+        border-radius: 0.5rem;
+    }
+
+    @media print {
+        body {
+            background: white;
+        }
+        .card-header, .btn-group, .row + .row {
+            display: none;
+        }
+        #resumeContent {
+            background-color: white;
+            box-shadow: none;
+        }
+    }
+</style>
+
+<script>
+    function printResume() {
+        window.print();
+    }
+</script>
+{% endblock %}

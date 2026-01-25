@@ -24,6 +24,15 @@ class User(UserMixin, db.Model):
     address = db.Column(db.String(200))  # New field for address
     profile_picture = db.Column(db.String(120), default='default.jpg')  # Default profile picture
     is_admin = db.Column(db.Boolean, default=False)  # Flag for admin users
+    # Resume fields
+    full_name = db.Column(db.String(150), nullable=True)
+    headline = db.Column(db.String(200), nullable=True)
+    location = db.Column(db.String(150), nullable=True)
+    summary = db.Column(db.Text, nullable=True)
+    skills = db.Column(db.Text, nullable=True)
+    experience = db.Column(db.Text, nullable=True)
+    education = db.Column(db.Text, nullable=True)
+    resume_updated_at = db.Column(db.DateTime, nullable=True)
 
     def __repr__(self):
         return f'<User {self.name}, {self.email}>'

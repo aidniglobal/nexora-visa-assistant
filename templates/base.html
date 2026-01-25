@@ -50,13 +50,27 @@
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('job_search') }}">🌍 Job Search</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('submit_application') }}">Investment Programs</a></li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="resumeDropdown" role="button" data-bs-toggle="dropdown">
+                            📄 Resume
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="resumeDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('create_resume') }}">Create/Edit Resume</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('view_resume') }}">View Resume</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('upload_resume') }}">Europass CV Generator</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('upload_resume') }}">Resume → Europass</a></li>
+                    {% endif %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('create_cover_letter') }}">Cover Letter</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('inquiry') }}">Contact</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('faq') }}">FAQ</a></li>
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item"><a class="nav-link text-success" href="{{ url_for('my_job_applications') }}">📋 My Applications</a></li>
+                    <li class="nav-item"><a class="nav-link text-success fw-bold" href="{{ url_for('my_job_applications') }}">📋 My Applications</a></li>
                     {% endif %}
                 </ul>
             </div>

@@ -339,6 +339,307 @@ investment_programs = {
             "Benefits": "Business residency, family can join",
             "Notes": "Approved by cantonal government. Must contribute to employment."
         }
+    },
+    "Netherlands": {
+        "Self-Employed Visa": {
+            "Documents": [
+                "Passport",
+                "Business plan",
+                "Financial proof: EUR 6,500 - EUR 100,000+",
+                "Chamber of Commerce registration",
+                "Tax registration",
+                "Health insurance",
+                "Accommodation proof"
+            ],
+            "Investment Required": "EUR 6,500 - EUR 100,000+",
+            "Processing Time": "4-6 weeks",
+            "Embassy Locations": ["Amsterdam", "Rotterdam", "The Hague"],
+            "Interview Requirement": "Usually not required",
+            "Benefits": "Business ownership, family eligibility, path to residency",
+            "Notes": "One of the most business-friendly countries in EU."
+        },
+        "Knowledge Migrant Visa": {
+            "Documents": [
+                "Passport",
+                "Employment contract",
+                "Educational credentials",
+                "Medical insurance",
+                "Proof of accommodation"
+            ],
+            "Investment Required": "N/A (Employment-based)",
+            "Processing Time": "2-3 weeks",
+            "Embassy Locations": ["Nationwide"],
+            "Interview Requirement": "Rarely required",
+            "Benefits": "Work permit, family can join, fast processing",
+            "Notes": "For skilled professionals earning EUR 3,500+ monthly."
+        }
+    },
+    "Ireland": {
+        "Startup Visa": {
+            "Documents": [
+                "Passport",
+                "Business plan",
+                "Entrepreneur visa approval letter",
+                "Proof of funds: EUR 100,000+ or investment commitment",
+                "Educational credentials",
+                "Medical insurance"
+            ],
+            "Investment Required": "EUR 100,000+",
+            "Processing Time": "4-8 weeks",
+            "Embassy Locations": ["Dublin", "Cork"],
+            "Interview Requirement": "May be required",
+            "Benefits": "Business ownership, EU citizenship path, tax benefits",
+            "Notes": "Ireland has favorable tax rates for startups."
+        },
+        "Critical Skills Employment Permit": {
+            "Documents": [
+                "Employment contract",
+                "Passport",
+                "Educational qualifications",
+                "Medical insurance"
+            ],
+            "Investment Required": "N/A (Employment-based)",
+            "Processing Time": "2-4 weeks",
+            "Embassy Locations": ["Nationwide"],
+            "Interview Requirement": "Usually not required",
+            "Benefits": "Work permit, path to residency, family eligible",
+            "Notes": "Fast-track for skilled workers in demand sectors."
+        }
+    },
+    "Spain": {
+        "Investor Visa": {
+            "Documents": [
+                "Passport",
+                "Investment proof: EUR 500,000+",
+                "Real estate purchase agreement (if applicable)",
+                "Financial documents",
+                "Background check",
+                "Health insurance",
+                "Proof of accommodation"
+            ],
+            "Investment Required": "EUR 500,000 - EUR 1,000,000+",
+            "Processing Time": "60-90 days",
+            "Embassy Locations": ["Madrid", "Barcelona", "Valencia", "Malaga"],
+            "Interview Requirement": "Rarely required",
+            "Benefits": "Residency, family eligible, renewable, travel EU",
+            "Notes": "Can invest in real estate, business, or capital investment."
+        },
+        "Digital Nomad Visa": {
+            "Documents": [
+                "Passport",
+                "Employment contract or business registration",
+                "Proof of income: EUR 2,300+ monthly",
+                "Health insurance",
+                "Criminal record certificate"
+            ],
+            "Investment Required": "N/A (Income requirement)",
+            "Processing Time": "4-6 weeks",
+            "Embassy Locations": ["Worldwide"],
+            "Interview Requirement": "Usually not required",
+            "Benefits": "1-year residency, renewable, work from Spain",
+            "Notes": "For remote workers and freelancers."
+        }
+    },
+    "New Zealand": {
+        "Business Visa": {
+            "Documents": [
+                "Passport",
+                "Business plan",
+                "Financial proof: NZD 200,000+ or investment",
+                "English language test",
+                "Health screening",
+                "Character reference",
+                "Medical examination"
+            ],
+            "Investment Required": "NZD 200,000+ or demonstrate business plan",
+            "Processing Time": "8-16 weeks",
+            "Embassy Locations": ["Auckland", "Wellington"],
+            "Interview Requirement": "Usually yes",
+            "Benefits": "Business ownership, path to residency, stunning location",
+            "Notes": "Business visa is 3 years, renewable."
+        },
+        "Skilled Migrant Visa": {
+            "Documents": [
+                "Passport",
+                "Skills assessment",
+                "English language test",
+                "Educational credentials",
+                "Job offer (optional but helpful)",
+                "Medical and police certificates"
+            ],
+            "Investment Required": "N/A (Points-based)",
+            "Processing Time": "12-20 weeks",
+            "Embassy Locations": ["Nationwide"],
+            "Interview Requirement": "Rarely required",
+            "Benefits": "Permanent residency, sponsorship available",
+            "Notes": "Points-based system. Currently around 160 points required."
+        }
+    },
+    "Thailand": {
+        "Retirement Visa": {
+            "Documents": [
+                "Passport",
+                "Proof of income: THB 65,000/month or bank balance THB 800,000+",
+                "Medical certificate",
+                "Criminal record check",
+                "Proof of accommodation"
+            ],
+            "Investment Required": "THB 800,000 (or THB 65,000/month income)",
+            "Processing Time": "3-5 days",
+            "Embassy Locations": ["Bangkok", "Chiang Mai", "Phuket"],
+            "Interview Requirement": "Usually not required",
+            "Benefits": "Long-term residency, renewable annually, low cost of living",
+            "Notes": "Most popular visa for retirees in Southeast Asia."
+        },
+        "Elite Visa": {
+            "Documents": [
+                "Passport",
+                "Application form",
+                "Financial proof",
+                "Background information",
+                "Medical certificate"
+            ],
+            "Investment Required": "THB 600,000 - THB 2,000,000+ (one-time)",
+            "Processing Time": "2-4 weeks",
+            "Embassy Locations": ["Thailand-wide"],
+            "Interview Requirement": "Rarely required",
+            "Benefits": "20-year residency, privileges, fast-track services",
+            "Notes": "Premium membership program with many benefits."
+        }
+    },
+    "Malaysia": {
+        "Malaysia My Second Home (MM2H)": {
+            "Documents": [
+                "Passport",
+                "Proof of funds: MYR 300,000+ (or MYR 150,000 for age 50+)",
+                "Fixed deposit: MYR 300,000 (or MYR 150,000)",
+                "Medical certificate",
+                "Police clearance",
+                "Proof of accommodation"
+            ],
+            "Investment Required": "MYR 150,000 - MYR 300,000",
+            "Processing Time": "2-3 months",
+            "Embassy Locations": ["Kuala Lumpur", "Penang"],
+            "Interview Requirement": "May be required",
+            "Benefits": "10-year renewable visa, very affordable living",
+            "Notes": "Popular with retirees and digital nomads."
+        }
+    },
+    "Mexico": {
+        "Temporary Residency": {
+            "Documents": [
+                "Passport",
+                "Proof of income: USD 2,700+/month or lump sum USD 42,000+",
+                "Proof of accommodation",
+                "Criminal background check",
+                "Medical examination"
+            ],
+            "Investment Required": "USD 42,000+ (or USD 2,700/month income)",
+            "Processing Time": "4-6 weeks",
+            "Embassy Locations": ["Mexico City", "Monterrey", "Guadalajara"],
+            "Interview Requirement": "Usually yes",
+            "Benefits": "4-year renewable visa, low cost of living",
+            "Notes": "One of the easiest temporary residency options."
+        },
+        "Investor Visa": {
+            "Documents": [
+                "Passport",
+                "Investment proof: MXN 2,700,000+ or real estate",
+                "Financial documents",
+                "Background check",
+                "Medical examination"
+            ],
+            "Investment Required": "MXN 2,700,000+ (USD ~180,000)",
+            "Processing Time": "6-8 weeks",
+            "Embassy Locations": ["Major cities"],
+            "Interview Requirement": "Usually yes",
+            "Benefits": "Permanent residency path, business ownership",
+            "Notes": "Can invest in real estate or business."
+        }
+    },
+    "Vietnam": {
+        "Temporary Residence Card": {
+            "Documents": [
+                "Passport",
+                "Visa approval letter",
+                "Application form",
+                "Medical examination",
+                "Police clearance",
+                "Accommodation letter"
+            ],
+            "Investment Required": "N/A (Visa cost ~USD 50)",
+            "Processing Time": "1-2 weeks",
+            "Embassy Locations": ["Hanoi", "Ho Chi Minh City"],
+            "Interview Requirement": "Usually not required",
+            "Benefits": "Long-term stay, affordable living",
+            "Notes": "Multiple entry visa available."
+        }
+    },
+    "Philippines": {
+        "SRRV (Special Resident Retiree's Visa)": {
+            "Documents": [
+                "Passport",
+                "Proof of age: 35+",
+                "Fixed deposit: PHP 500,000+ (age 35-49) or PHP 300,000 (age 50+)",
+                "Medical examination",
+                "Police clearance"
+            ],
+            "Investment Required": "PHP 300,000 - PHP 500,000",
+            "Processing Time": "1-2 weeks",
+            "Embassy Locations": ["Manila", "Cebu"],
+            "Interview Requirement": "Usually not required",
+            "Benefits": "Lifetime residency, can buy property",
+            "Notes": "Great for retirees in tropical paradise."
+        }
+    },
+    "Chile": {
+        "Investment Visa": {
+            "Documents": [
+                "Passport",
+                "Investment proof: USD 200,000+",
+                "Business plan",
+                "Financial documents",
+                "Background check",
+                "Medical examination"
+            ],
+            "Investment Required": "USD 200,000+",
+            "Processing Time": "60-90 days",
+            "Embassy Locations": ["Santiago"],
+            "Interview Requirement": "Usually yes",
+            "Benefits": "1-year visa, renewable, stable country",
+            "Notes": "One of the most developed economies in Latin America."
+        },
+        "Skilled Worker Visa": {
+            "Documents": [
+                "Employment contract",
+                "Passport",
+                "Educational credentials",
+                "Medical examination"
+            ],
+            "Investment Required": "N/A (Employment-based)",
+            "Processing Time": "4-6 weeks",
+            "Embassy Locations": ["Nationwide"],
+            "Interview Requirement": "Rarely required",
+            "Benefits": "Work permit, family eligible",
+            "Notes": "For professionals in demand sectors."
+        }
+    },
+    "Greece": {
+        "Residence Permit (Golden Visa)": {
+            "Documents": [
+                "Passport",
+                "Investment proof: EUR 250,000+",
+                "Real estate purchase agreement",
+                "Financial documents",
+                "Police clearance"
+            ],
+            "Investment Required": "EUR 250,000+",
+            "Processing Time": "30-45 days",
+            "Embassy Locations": ["Athens", "Thessaloniki"],
+            "Interview Requirement": "Rarely required",
+            "Benefits": "Residency, family eligible, EU travel, property ownership",
+            "Notes": "Real estate investment required."
+        }
     }
 }
 
